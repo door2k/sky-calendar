@@ -177,6 +177,7 @@ export function WeekView() {
         people={people}
         activities={activities}
         currentWeekStart={weekStart}
+        schedules={weekData?.days.filter((d): d is DaySchedule => d !== null)}
       />
     </div>
   );

@@ -18,6 +18,18 @@ interface Activity {
   default_time?: string;
 }
 
+interface DaySchedule {
+  id: string;
+  date: string;
+  dropoff_person_id?: string;
+  pickup_person_id?: string;
+  bedtime_person_id?: string;
+  after_gan_activity_id?: string;
+  after_gan_time?: string;
+  is_no_gan?: boolean;
+  no_gan_reason?: string;
+}
+
 interface ConversationMessage {
   role: 'user' | 'assistant';
   content: string;
@@ -27,6 +39,7 @@ interface RequestBody {
   message: string;
   people: Person[];
   activities: Activity[];
+  schedules?: DaySchedule[];
   currentWeekStart: string;
   conversationHistory?: ConversationMessage[];
 }
@@ -103,7 +116,21 @@ Return a JSON array of actions. Each action has a "type" and relevant fields:
    }
    \`\`\`
 
-5. **message** - Send a message back to the user (for confirmations or questions)
+5. **update_saturday** - Update Saturday schedule (Saturdays have a list of activities, not single assignment)
+   \`\`\`json
+   {
+     "type": "update_saturday",
+     "date": "2026-01-18",
+     "activities": [
+       {"activity_id": "uuid", "time": "10:00"},
+       {"activity_id": "uuid", "time": "14:00"}
+     ],
+     "notes": "Optional notes"
+   }
+   \`\`\`
+   Note: To add an activity to Saturday, include ALL existing activities plus the new one. To remove, exclude it from the list.
+
+6. **message** - Send a message back to the user (for confirmations or questions)
    \`\`\`json
    {
      "type": "message",
@@ -165,11 +192,23 @@ export default async function handler(req: Request): Promise<Response> {
 
   try {
     const body: RequestBody = await req.json();
-    const { message, people, activities, currentWeekStart, conversationHistory = [] } = body;
+    const { message, people, activities, schedules = [], currentWeekStart, conversationHistory = [] } = body;
 
     // Generate explicit dates for each day of the week
     const weekDates = getWeekDates(currentWeekStart);
     const weekDatesStr = weekDates.map(d => `- ${d.day}: ${d.date}`).join('\n');
+
+    // Build scheduled activities context
+    const scheduledActivitiesStr = schedules.length > 0
+      ? schedules
+          .filter(s => s.after_gan_activity_id)
+          .map(s => {
+            const activity = activities.find(a => a.id === s.after_gan_activity_id);
+            const dayInfo = weekDates.find(d => d.date === s.date);
+            return `- ${dayInfo?.day || s.date}: ${activity?.name || 'Unknown activity'} at ${s.after_gan_time || 'unspecified time'}`;
+          })
+          .join('\n') || '(none scheduled this week)'
+      : '(no schedule data provided)';
 
     const contextInfo = `
 ## Current Context
@@ -180,10 +219,14 @@ ${weekDatesStr}
 **People:**
 ${people.map(p => `- ${p.name} (${p.role}): ID="${p.id}"`).join('\n')}
 
-**Activities:**
+**Activities (definitions):**
 ${activities.length > 0 ? activities.map(a => `- ${a.name}${a.is_recurring ? ` (recurring: ${a.recurrence_day} at ${a.default_time})` : ''}: ID="${a.id}"`).join('\n') : '(none yet)'}
 
-IMPORTANT: When updating days, use the exact dates listed above. For example, if this week's Sunday is 2026-01-11, use "2026-01-11" for Sunday.`;
+**Currently Scheduled Activities This Week:**
+${scheduledActivitiesStr}
+
+IMPORTANT: When updating days, use the exact dates listed above. For example, if this week's Sunday is 2026-01-11, use "2026-01-11" for Sunday.
+IMPORTANT: "Activities (definitions)" shows what activities EXIST. "Currently Scheduled Activities" shows what's actually ASSIGNED to days this week.`;
 
     // Build messages array with conversation history
     const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [];

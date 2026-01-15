@@ -1,13 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { format } from 'date-fns';
-import { useUpdateDaySchedule } from '../hooks/useSchedule';
+import { useUpdateDaySchedule, useUpdateSaturdaySchedule } from '../hooks/useSchedule';
 import { useCreateActivity, useDeleteActivity } from '../hooks/useActivities';
-import type { Person, Activity } from '../types';
+import type { Person, Activity, DaySchedule, SaturdayActivity } from '../types';
 
 interface AIAssistantProps {
   people: Person[];
   activities: Activity[];
   currentWeekStart: Date;
+  schedules?: DaySchedule[];
 }
 
 interface Message {
@@ -16,16 +17,18 @@ interface Message {
 }
 
 interface AssistantAction {
-  type: 'update_day' | 'create_activity' | 'assign_activity' | 'delete_activity' | 'message';
+  type: 'update_day' | 'create_activity' | 'assign_activity' | 'delete_activity' | 'update_saturday' | 'message';
   date?: string;
   updates?: Record<string, unknown>;
   activity?: Omit<Activity, 'id'>;
   activity_id?: string;
   time?: string;
   text?: string;
+  activities?: SaturdayActivity[];
+  notes?: string;
 }
 
-export function AIAssistant({ people, activities, currentWeekStart }: AIAssistantProps) {
+export function AIAssistant({ people, activities, currentWeekStart, schedules = [] }: AIAssistantProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([
@@ -40,6 +43,7 @@ export function AIAssistant({ people, activities, currentWeekStart }: AIAssistan
   const inputRef = useRef<HTMLInputElement>(null);
 
   const updateDay = useUpdateDaySchedule();
+  const updateSaturday = useUpdateSaturdaySchedule();
   const createActivity = useCreateActivity();
   const deleteActivity = useDeleteActivity();
 
@@ -111,6 +115,18 @@ export function AIAssistant({ people, activities, currentWeekStart }: AIAssistan
             break;
           }
 
+          case 'update_saturday': {
+            if (action.date && action.activities) {
+              await updateSaturday.mutateAsync({
+                date: action.date,
+                activities: action.activities,
+                notes: action.notes,
+              });
+              results.push(`Updated Saturday ${action.date}`);
+            }
+            break;
+          }
+
           case 'message': {
             if (action.text) {
               addMessage('assistant', action.text);
@@ -150,6 +166,7 @@ export function AIAssistant({ people, activities, currentWeekStart }: AIAssistan
           message: userInput,
           people,
           activities,
+          schedules,
           currentWeekStart: format(currentWeekStart, 'yyyy-MM-dd'),
           conversationHistory,
         }),
