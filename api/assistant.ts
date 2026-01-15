@@ -142,14 +142,26 @@ Return a JSON array of actions. Each action has a "type" and relevant fields:
 
 1. When user says "next week", add 7 days to the currentWeekStart date
 2. Match person names flexibly: "Gili" matches "Gili & Yossi", "savta" matches "Simcha"
-3. When creating a recurring activity, also assign it to the appropriate day in the current/next week
+3. **CRITICAL: When creating an activity that should appear on a day's schedule, you MUST include BOTH a "create_activity" action AND an "assign_activity" action.** The create_activity creates the activity definition, but it won't show on any day unless you also use assign_activity to schedule it. For recurring activities, assign it to the next occurrence of that day.
 4. Always include a "message" action at the end to confirm what you did
 5. If something is unclear, ask for clarification using a "message" action
 6. Parse times flexibly: "4:30", "16:30", "4:30pm" all work
 
 ## Response Format
 
-Always respond with valid JSON array. Example:
+Always respond with valid JSON array.
+
+**Example for creating and scheduling an activity:**
+\`\`\`json
+[
+  {"type": "create_activity", "activity": {"name": "Soccer", "is_recurring": true, "recurrence_day": "monday", "default_time": "16:00"}},
+  {"type": "assign_activity", "date": "2026-01-12", "time": "16:00"},
+  {"type": "message", "text": "Created soccer activity and scheduled it for Monday."}
+]
+\`\`\`
+Note: The assign_activity action doesn't need activity_id when paired with create_activity - it will use the newly created activity's ID.
+
+**Example for updating a person:**
 \`\`\`json
 [
   {"type": "update_day", "date": "2026-01-12", "updates": {"pickup_person_id": "abc-123"}},
