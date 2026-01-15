@@ -98,7 +98,7 @@ Return a JSON array of actions. Each action has a "type" and relevant fields:
    }
    \`\`\`
 
-3. **assign_activity** - Assign an existing activity to a day
+3. **assign_activity** - Assign an existing activity to a WEEKDAY (Sun-Fri ONLY - does NOT work for Saturday!)
    \`\`\`json
    {
      "type": "assign_activity",
@@ -107,6 +107,7 @@ Return a JSON array of actions. Each action has a "type" and relevant fields:
      "time": "16:30"
    }
    \`\`\`
+   **WARNING: This action ONLY works for weekdays. For Saturday, you MUST use update_saturday instead.**
 
 4. **delete_activity** - Delete an activity (removes it completely, including all recurrences)
    \`\`\`json
@@ -142,16 +143,17 @@ Return a JSON array of actions. Each action has a "type" and relevant fields:
 
 1. When user says "next week", add 7 days to the currentWeekStart date
 2. Match person names flexibly: "Gili" matches "Gili & Yossi", "savta" matches "Simcha"
-3. **CRITICAL: When creating an activity that should appear on a day's schedule, you MUST include BOTH a "create_activity" action AND an "assign_activity" action.** The create_activity creates the activity definition, but it won't show on any day unless you also use assign_activity to schedule it. For recurring activities, assign it to the next occurrence of that day.
-4. Always include a "message" action at the end to confirm what you did
-5. If something is unclear, ask for clarification using a "message" action
-6. Parse times flexibly: "4:30", "16:30", "4:30pm" all work
+3. **CRITICAL FOR WEEKDAYS (Sun-Fri): When creating an activity that should appear on a weekday schedule, you MUST include BOTH a "create_activity" action AND an "assign_activity" action.** The create_activity creates the activity definition, but it won't show on any day unless you also use assign_activity to schedule it.
+4. **CRITICAL FOR SATURDAY: Saturday uses a completely different system - "assign_activity" does NOT work for Saturday!** When adding activities to Saturday, you MUST use "update_saturday" action. To add a new activity to Saturday: first use "create_activity", then use "update_saturday" with the activities array. The "assign_activity" action is ONLY for weekdays.
+5. Always include a "message" action at the end to confirm what you did
+6. If something is unclear, ask for clarification using a "message" action
+7. Parse times flexibly: "4:30", "16:30", "4:30pm" all work
 
 ## Response Format
 
 Always respond with valid JSON array.
 
-**Example for creating and scheduling an activity:**
+**Example for creating and scheduling a WEEKDAY activity:**
 \`\`\`json
 [
   {"type": "create_activity", "activity": {"name": "Soccer", "is_recurring": true, "recurrence_day": "monday", "default_time": "16:00"}},
@@ -160,6 +162,16 @@ Always respond with valid JSON array.
 ]
 \`\`\`
 Note: The assign_activity action doesn't need activity_id when paired with create_activity - it will use the newly created activity's ID.
+
+**Example for adding a SATURDAY activity:**
+\`\`\`json
+[
+  {"type": "create_activity", "activity": {"name": "Swimming", "is_recurring": false}},
+  {"type": "update_saturday", "date": "2026-01-18", "activities": [{"time": "10:00"}]},
+  {"type": "message", "text": "Added swimming to Saturday at 10:00 AM."}
+]
+\`\`\`
+Note: The update_saturday activities array item doesn't need activity_id when paired with create_activity - it will use the newly created activity's ID. The activities array replaces any existing activities, so include all desired activities.
 
 **Example for updating a person:**
 \`\`\`json
