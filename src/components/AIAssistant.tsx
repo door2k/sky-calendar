@@ -64,7 +64,21 @@ export function AIAssistant({ people, activities, currentWeekStart, schedules = 
   const executeActions = async (actions: AssistantAction[]) => {
     const results: string[] = [];
 
-    for (const action of actions) {
+    // Sort actions so create_activity runs before assign_activity
+    // This ensures the new activity ID is available for assignment
+    const actionOrder: Record<string, number> = {
+      'create_activity': 0,
+      'update_day': 1,
+      'assign_activity': 2,
+      'delete_activity': 3,
+      'update_saturday': 4,
+      'message': 5,
+    };
+    const sortedActions = [...actions].sort(
+      (a, b) => (actionOrder[a.type] ?? 99) - (actionOrder[b.type] ?? 99)
+    );
+
+    for (const action of sortedActions) {
       try {
         switch (action.type) {
           case 'update_day': {
