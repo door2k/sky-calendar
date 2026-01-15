@@ -64,6 +64,9 @@ export function AIAssistant({ people, activities, currentWeekStart, schedules = 
   const executeActions = async (actions: AssistantAction[]) => {
     const results: string[] = [];
 
+    // Debug: log the raw actions from Claude
+    console.log('Raw actions from Claude:', JSON.stringify(actions, null, 2));
+
     // Sort actions so create_activity runs before assign_activity
     // This ensures the new activity ID is available for assignment
     const actionOrder: Record<string, number> = {
@@ -77,6 +80,8 @@ export function AIAssistant({ people, activities, currentWeekStart, schedules = 
     const sortedActions = [...actions].sort(
       (a, b) => (actionOrder[a.type] ?? 99) - (actionOrder[b.type] ?? 99)
     );
+
+    console.log('Sorted actions:', JSON.stringify(sortedActions, null, 2));
 
     for (const action of sortedActions) {
       try {
@@ -96,27 +101,34 @@ export function AIAssistant({ people, activities, currentWeekStart, schedules = 
             if (action.activity) {
               const newActivity = await createActivity.mutateAsync(action.activity);
               results.push(`Created activity: ${newActivity.name}`);
+              console.log('Created activity with ID:', newActivity.id);
 
               // If there's also an assign_activity action for this new activity,
               // we need to update its activity_id
               const assignAction = actions.find(
                 a => a.type === 'assign_activity' && !a.activity_id
               );
+              console.log('Found assignAction:', assignAction);
               if (assignAction) {
                 assignAction.activity_id = newActivity.id;
+                console.log('Updated assignAction with ID:', assignAction);
               }
             }
             break;
           }
 
           case 'assign_activity': {
+            console.log('Processing assign_activity:', action);
             if (action.date && action.activity_id) {
+              console.log('Assigning activity', action.activity_id, 'to date', action.date);
               await updateDay.mutateAsync({
                 date: action.date,
                 after_gan_activity_id: action.activity_id,
                 after_gan_time: action.time,
               });
               results.push(`Assigned activity to ${action.date}`);
+            } else {
+              console.log('Skipping assign_activity - missing date or activity_id:', { date: action.date, activity_id: action.activity_id });
             }
             break;
           }
