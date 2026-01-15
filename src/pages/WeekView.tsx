@@ -6,6 +6,7 @@ import { ThemePicker } from '../components/ThemePicker';
 import { ActivityPopup } from '../components/ActivityPopup';
 import { EditDayModal } from '../components/EditDayModal';
 import { AddActivityModal } from '../components/AddActivityModal';
+import { AIAssistant } from '../components/AIAssistant';
 import { useTheme } from '../hooks/useTheme';
 import { usePeople } from '../hooks/usePeople';
 import { useActivities, useCreateActivity } from '../hooks/useActivities';
@@ -75,6 +76,9 @@ export function WeekView() {
             </p>
           </div>
           <div className="flex items-center gap-4">
+            <div className="px-3 py-1.5 rounded-full text-sm font-medium" style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
+              Today: {format(new Date(), 'EEEE, MMM d')}
+            </div>
             <ThemePicker currentTheme={currentTheme} onSelectTheme={selectTheme} />
           </div>
         </div>
@@ -167,6 +171,13 @@ export function WeekView() {
           onClose={() => setShowAddActivity(false)}
         />
       )}
+
+      {/* AI Assistant */}
+      <AIAssistant
+        people={people}
+        activities={activities}
+        currentWeekStart={weekStart}
+      />
     </div>
   );
 }
