@@ -1,4 +1,4 @@
-import { Theme, ThemeName } from '../types';
+import type { Theme, ThemeName } from '../types';
 
 export const themes: Record<ThemeName, Theme> = {
   bluey: {
