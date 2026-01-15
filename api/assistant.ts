@@ -116,6 +116,31 @@ Always respond with valid JSON array. Example:
 ]
 \`\`\``;
 
+// Helper to format date as YYYY-MM-DD
+function formatDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+// Helper to add days to a date
+function addDays(date: Date, days: number): Date {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}
+
+// Generate week dates from a start date
+function getWeekDates(weekStart: string): { day: string; date: string }[] {
+  const startDate = new Date(weekStart + 'T00:00:00');
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  return days.map((day, index) => ({
+    day,
+    date: formatDate(addDays(startDate, index)),
+  }));
+}
+
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
@@ -128,10 +153,15 @@ export default async function handler(req: Request): Promise<Response> {
     const body: RequestBody = await req.json();
     const { message, people, activities, currentWeekStart } = body;
 
+    // Generate explicit dates for each day of the week
+    const weekDates = getWeekDates(currentWeekStart);
+    const weekDatesStr = weekDates.map(d => `- ${d.day}: ${d.date}`).join('\n');
+
     const userContext = `
 ## Current Context
 
-**Current Week Start:** ${currentWeekStart}
+**This Week's Dates (USE THESE EXACT DATES):**
+${weekDatesStr}
 
 **People:**
 ${people.map(p => `- ${p.name} (${p.role}): ID="${p.id}"`).join('\n')}
@@ -140,6 +170,8 @@ ${people.map(p => `- ${p.name} (${p.role}): ID="${p.id}"`).join('\n')}
 ${activities.length > 0 ? activities.map(a => `- ${a.name}${a.is_recurring ? ` (recurring: ${a.recurrence_day} at ${a.default_time})` : ''}: ID="${a.id}"`).join('\n') : '(none yet)'}
 
 **User Request:** ${message}
+
+IMPORTANT: When updating days, use the exact dates listed above. For example, if this week's Sunday is 2026-01-11, use "2026-01-11" for Sunday.
 
 Respond with a JSON array of actions.`;
 

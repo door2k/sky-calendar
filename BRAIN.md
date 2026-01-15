@@ -117,15 +117,17 @@ sky-calendar/
 
 ### What's Working
 - Weekly view displays correctly with all schedule data
+- Monthly view displays calendar grid with activities
 - AI assistant understands natural language and updates database
+- AI assistant uses correct dates (explicit week date mapping)
 - Drop-off, pickup, bedtime assignments work
 - Activity creation and assignment to schedules works
 - Themes change correctly
-- "Today" badge shows current date
+- "Today" badge shows current date in both weekly and monthly views
 
 ### Known Issues / TODO
-- [ ] Monthly view shows grid but activities may not display (needs verification)
-- [ ] AI sometimes gets confused about exact dates (says Monday but means Tuesday)
+- [x] Monthly view shows grid but activities may not display (needs verification) - **FIXED: Verified working**
+- [x] AI sometimes gets confused about exact dates (says Monday but means Tuesday) - **FIXED: Added explicit week dates to API prompt**
 - [ ] No authentication yet (public edit access)
 - [ ] No Google Calendar sync yet
 
@@ -151,6 +153,13 @@ The AI assistant requires the `ANTHROPIC_API_KEY` environment variable. It only 
 ## Design Document
 
 Full design spec is at: `/Users/tamir/docs/plans/2025-01-15-sky-calendar-design.md`
+
+## Changelog
+
+### 2026-01-15
+- **Fixed AI date offset bug**: Added `getWeekDates()` helper in `api/assistant.ts` that generates explicit dates for each day of the week, preventing Claude from miscalculating dates
+- **Verified monthly view**: Confirmed monthly calendar displays activities correctly
+- **Tested AI assistant**: Confirmed "set Asaf for drop-off on Sunday" correctly updates Sunday (Jan 11)
 
 ---
 
