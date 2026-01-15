@@ -1,35 +1,41 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { startOfWeek, format } from 'date-fns';
+import { WeekView } from './pages/WeekView';
+import { MonthView } from './pages/MonthView';
+import { PrintWeek } from './pages/PrintWeek';
+import { PrintMonth } from './pages/PrintMonth';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function App() {
-  const [count, setCount] = useState(0)
+  const currentWeekStart = format(
+    startOfWeek(new Date(), { weekStartsOn: 0 }),
+    'yyyy-MM-dd'
+  );
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Navigate to={`/week/${currentWeekStart}`} replace />} />
+          <Route path="/week" element={<Navigate to={`/week/${currentWeekStart}`} replace />} />
+          <Route path="/week/:date" element={<WeekView />} />
+          <Route path="/month" element={<Navigate to={`/month/${format(new Date(), 'yyyy-MM')}`} replace />} />
+          <Route path="/month/:month" element={<MonthView />} />
+          <Route path="/print/week/:date" element={<PrintWeek />} />
+          <Route path="/print/month/:month" element={<PrintMonth />} />
+        </Routes>
+      </BrowserRouter>
+    </QueryClientProvider>
+  );
 }
 
-export default App
+export default App;
