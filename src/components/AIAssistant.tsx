@@ -177,16 +177,19 @@ export function AIAssistant({ people, activities, currentWeekStart, schedules = 
               addMessage('assistant', `[DEBUG] Valid activities after filter: ${JSON.stringify(validActivities)}`);
               if (validActivities.length > 0) {
                 try {
-                  await updateSaturday.mutateAsync({
+                  const payload = {
                     date: action.date,
                     activities: validActivities,
                     notes: action.notes,
-                  });
+                  };
+                  addMessage('assistant', `[DEBUG] Calling updateSaturday with: ${JSON.stringify(payload)}`);
+                  await updateSaturday.mutateAsync(payload);
                   results.push(`Updated Saturday ${action.date}`);
                   addMessage('assistant', `[DEBUG] Saturday update SUCCESS for ${action.date}`);
                 } catch (err) {
                   console.error('Saturday update failed:', err);
-                  addMessage('assistant', `[DEBUG] Saturday update FAILED: ${err}`);
+                  const errorMsg = err instanceof Error ? err.message : JSON.stringify(err);
+                  addMessage('assistant', `[DEBUG] Saturday update FAILED: ${errorMsg}`);
                 }
               } else {
                 console.log('No valid activities for Saturday update');
