@@ -1,0 +1,200 @@
+import Anthropic from '@anthropic-ai/sdk';
+
+const client = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
+
+interface Person {
+  id: string;
+  name: string;
+  role: string;
+}
+
+interface Activity {
+  id: string;
+  name: string;
+  is_recurring: boolean;
+  recurrence_day?: string;
+  default_time?: string;
+}
+
+interface RequestBody {
+  message: string;
+  people: Person[];
+  activities: Activity[];
+  currentWeekStart: string;
+}
+
+const SYSTEM_PROMPT = `You are a helpful assistant for managing Sky's schedule calendar. Sky is a child who goes to Gan (kindergarten) in Israel.
+
+## Data Model
+
+### People (fixed list):
+You will receive the list of people with their IDs. Common names/nicknames:
+- "Asaf" or "Tamir" - the Abas (fathers)
+- "Gili & Yossi" or "Savta Gili" or "Saba Yossi" - grandparents
+- "Simcha" or "Savta Simcha" or just "Savta" - grandmother
+- "Maya" - the babysitter
+
+### Schedule Types:
+- **Weekday Schedule** (Sun-Fri): dropoff_person_id, pickup_person_id, bedtime_person_id, after_gan_activity_id, after_gan_time, gan_activity, is_no_gan, no_gan_reason
+- **Saturday**: Different - just activities list, no Gan
+
+### Days:
+- Week starts on Sunday (Israel calendar)
+- Days: sunday (0), monday (1), tuesday (2), wednesday (3), thursday (4), friday (5), saturday (6)
+
+## Available Actions
+
+Return a JSON array of actions. Each action has a "type" and relevant fields:
+
+1. **update_day** - Update a weekday schedule
+   \`\`\`json
+   {
+     "type": "update_day",
+     "date": "2026-01-12",
+     "updates": {
+       "dropoff_person_id": "uuid",
+       "pickup_person_id": "uuid",
+       "bedtime_person_id": "uuid",
+       "after_gan_activity_id": "uuid",
+       "after_gan_time": "16:30",
+       "is_no_gan": true,
+       "no_gan_reason": "Holiday"
+     }
+   }
+   \`\`\`
+
+2. **create_activity** - Create a new activity
+   \`\`\`json
+   {
+     "type": "create_activity",
+     "activity": {
+       "name": "Hip Hop",
+       "address": "Gan Meir",
+       "is_recurring": true,
+       "recurrence_day": "monday",
+       "default_time": "16:30"
+     }
+   }
+   \`\`\`
+
+3. **assign_activity** - Assign an existing activity to a day
+   \`\`\`json
+   {
+     "type": "assign_activity",
+     "date": "2026-01-12",
+     "activity_id": "uuid",
+     "time": "16:30"
+   }
+   \`\`\`
+
+4. **message** - Send a message back to the user (for confirmations or questions)
+   \`\`\`json
+   {
+     "type": "message",
+     "text": "I've updated the pickup assignments for this week."
+   }
+   \`\`\`
+
+## Rules
+
+1. When user says "next week", add 7 days to the currentWeekStart date
+2. Match person names flexibly: "Gili" matches "Gili & Yossi", "savta" matches "Simcha"
+3. When creating a recurring activity, also assign it to the appropriate day in the current/next week
+4. Always include a "message" action at the end to confirm what you did
+5. If something is unclear, ask for clarification using a "message" action
+6. Parse times flexibly: "4:30", "16:30", "4:30pm" all work
+
+## Response Format
+
+Always respond with valid JSON array. Example:
+\`\`\`json
+[
+  {"type": "update_day", "date": "2026-01-12", "updates": {"pickup_person_id": "abc-123"}},
+  {"type": "message", "text": "Updated Monday's pickup to Tamir."}
+]
+\`\`\``;
+
+export default async function handler(req: Request): Promise<Response> {
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  try {
+    const body: RequestBody = await req.json();
+    const { message, people, activities, currentWeekStart } = body;
+
+    const userContext = `
+## Current Context
+
+**Current Week Start:** ${currentWeekStart}
+
+**People:**
+${people.map(p => `- ${p.name} (${p.role}): ID="${p.id}"`).join('\n')}
+
+**Activities:**
+${activities.length > 0 ? activities.map(a => `- ${a.name}${a.is_recurring ? ` (recurring: ${a.recurrence_day} at ${a.default_time})` : ''}: ID="${a.id}"`).join('\n') : '(none yet)'}
+
+**User Request:** ${message}
+
+Respond with a JSON array of actions.`;
+
+    const response = await client.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1024,
+      system: SYSTEM_PROMPT,
+      messages: [
+        {
+          role: 'user',
+          content: userContext,
+        },
+      ],
+    });
+
+    // Extract the text content
+    const textContent = response.content.find(c => c.type === 'text');
+    if (!textContent || textContent.type !== 'text') {
+      throw new Error('No text response from Claude');
+    }
+
+    // Parse the JSON from the response
+    let actions;
+    try {
+      // Try to extract JSON from the response (might be wrapped in markdown code blocks)
+      const jsonMatch = textContent.text.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        actions = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error('No JSON array found in response');
+      }
+    } catch {
+      // If parsing fails, return a message action with the raw response
+      actions = [{ type: 'message', text: textContent.text }];
+    }
+
+    return new Response(JSON.stringify({ actions }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    console.error('Assistant API error:', error);
+    return new Response(
+      JSON.stringify({
+        error: 'Failed to process request',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  }
+}
+
+export const config = {
+  runtime: 'edge',
+};

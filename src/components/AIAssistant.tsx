@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { addWeeks, format } from 'date-fns';
-import { parseScheduleCommand } from '../lib/scheduleParser';
+import { format } from 'date-fns';
 import { useUpdateDaySchedule } from '../hooks/useSchedule';
 import { useCreateActivity } from '../hooks/useActivities';
 import type { Person, Activity } from '../types';
@@ -16,13 +15,23 @@ interface Message {
   content: string;
 }
 
+interface AssistantAction {
+  type: 'update_day' | 'create_activity' | 'assign_activity' | 'message';
+  date?: string;
+  updates?: Record<string, unknown>;
+  activity?: Omit<Activity, 'id'>;
+  activity_id?: string;
+  time?: string;
+  text?: string;
+}
+
 export function AIAssistant({ people, activities, currentWeekStart }: AIAssistantProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: 'Hi! I can help update Sky\'s schedule. Try:\n• "pickup assignment: sun: Asaf, mon: Tamir, tue: Gili"\n• "add weekly event on Mondays called Hip Hop at 16:30 in Gan Meir"\n• "set Friday as no gan"',
+      content: 'Hi! I\'m Sky\'s schedule assistant. Just tell me what you need in plain language, like:\n\n"Set Tamir for pickup on Monday and Tuesday"\n"Add a hip hop class on Mondays at 4:30pm in Gan Meir"\n"Mark Friday as no gan because of a holiday"',
     },
   ]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -47,6 +56,68 @@ export function AIAssistant({ people, activities, currentWeekStart }: AIAssistan
     setMessages((prev) => [...prev, { role, content }]);
   };
 
+  const executeActions = async (actions: AssistantAction[]) => {
+    const results: string[] = [];
+
+    for (const action of actions) {
+      try {
+        switch (action.type) {
+          case 'update_day': {
+            if (action.date && action.updates) {
+              await updateDay.mutateAsync({
+                date: action.date,
+                ...action.updates,
+              } as Parameters<typeof updateDay.mutateAsync>[0]);
+              results.push(`Updated ${action.date}`);
+            }
+            break;
+          }
+
+          case 'create_activity': {
+            if (action.activity) {
+              const newActivity = await createActivity.mutateAsync(action.activity);
+              results.push(`Created activity: ${newActivity.name}`);
+
+              // If there's also an assign_activity action for this new activity,
+              // we need to update its activity_id
+              const assignAction = actions.find(
+                a => a.type === 'assign_activity' && !a.activity_id
+              );
+              if (assignAction) {
+                assignAction.activity_id = newActivity.id;
+              }
+            }
+            break;
+          }
+
+          case 'assign_activity': {
+            if (action.date && action.activity_id) {
+              await updateDay.mutateAsync({
+                date: action.date,
+                after_gan_activity_id: action.activity_id,
+                after_gan_time: action.time,
+              });
+              results.push(`Assigned activity to ${action.date}`);
+            }
+            break;
+          }
+
+          case 'message': {
+            if (action.text) {
+              addMessage('assistant', action.text);
+            }
+            break;
+          }
+        }
+      } catch (error) {
+        console.error(`Failed to execute action ${action.type}:`, error);
+        results.push(`Failed: ${action.type}`);
+      }
+    }
+
+    return results;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isProcessing) return;
@@ -56,88 +127,36 @@ export function AIAssistant({ people, activities, currentWeekStart }: AIAssistan
     addMessage('user', userInput);
     setIsProcessing(true);
 
-    // Determine which week to use - default to next week for assignments
-    const isNextWeek = userInput.toLowerCase().includes('next week');
-    const targetWeekStart = isNextWeek ? addWeeks(currentWeekStart, 1) : currentWeekStart;
-
-    const command = parseScheduleCommand(userInput, people, activities, targetWeekStart);
-
     try {
-      switch (command.type) {
-        case 'add_activity': {
-          await createActivity.mutateAsync(command.activity);
-          addMessage('assistant', `Added "${command.activity.name}" as a recurring ${command.activity.recurrence_day} activity at ${command.activity.default_time}${command.activity.address ? ` in ${command.activity.address}` : ''}.`);
-          break;
-        }
+      const response = await fetch('/api/assistant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userInput,
+          people,
+          activities,
+          currentWeekStart: format(currentWeekStart, 'yyyy-MM-dd'),
+        }),
+      });
 
-        case 'update_pickups': {
-          for (const assignment of command.assignments) {
-            await updateDay.mutateAsync({
-              date: assignment.date,
-              pickup_person_id: assignment.person_id,
-            });
-          }
-          const summary = command.assignments
-            .map((a) => {
-              const person = people.find((p) => p.id === a.person_id);
-              return `${format(new Date(a.date), 'EEE')}: ${person?.name}`;
-            })
-            .join(', ');
-          addMessage('assistant', `Updated pickup assignments: ${summary}`);
-          break;
-        }
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.details || 'API request failed');
+      }
 
-        case 'update_dropoffs': {
-          for (const assignment of command.assignments) {
-            await updateDay.mutateAsync({
-              date: assignment.date,
-              dropoff_person_id: assignment.person_id,
-            });
-          }
-          const summary = command.assignments
-            .map((a) => {
-              const person = people.find((p) => p.id === a.person_id);
-              return `${format(new Date(a.date), 'EEE')}: ${person?.name}`;
-            })
-            .join(', ');
-          addMessage('assistant', `Updated drop-off assignments: ${summary}`);
-          break;
-        }
+      const data = await response.json();
 
-        case 'update_bedtimes': {
-          for (const assignment of command.assignments) {
-            await updateDay.mutateAsync({
-              date: assignment.date,
-              bedtime_person_id: assignment.person_id,
-            });
-          }
-          const summary = command.assignments
-            .map((a) => {
-              const person = people.find((p) => p.id === a.person_id);
-              return `${format(new Date(a.date), 'EEE')}: ${person?.name}`;
-            })
-            .join(', ');
-          addMessage('assistant', `Updated bedtime assignments: ${summary}`);
-          break;
-        }
-
-        case 'set_no_gan': {
-          await updateDay.mutateAsync({
-            date: command.date,
-            is_no_gan: true,
-            no_gan_reason: command.reason || 'No Gan',
-          });
-          addMessage('assistant', `Marked ${format(new Date(command.date), 'EEEE, MMM d')} as no Gan${command.reason ? ` (${command.reason})` : ''}.`);
-          break;
-        }
-
-        case 'error': {
-          addMessage('assistant', command.message);
-          break;
-        }
+      if (data.actions && Array.isArray(data.actions)) {
+        await executeActions(data.actions);
+      } else if (data.error) {
+        addMessage('assistant', `Sorry, something went wrong: ${data.error}`);
       }
     } catch (error) {
-      addMessage('assistant', `Something went wrong: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('Assistant error:', error);
+      addMessage(
+        'assistant',
+        `Sorry, I encountered an error: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`
+      );
     } finally {
       setIsProcessing(false);
     }
@@ -182,7 +201,7 @@ export function AIAssistant({ people, activities, currentWeekStart }: AIAssistan
             ))}
             {isProcessing && (
               <div className="mr-8 bg-blue-50 rounded-lg p-3 text-sm text-gray-500">
-                Processing...
+                Thinking...
               </div>
             )}
             <div ref={messagesEndRef} />
@@ -195,7 +214,7 @@ export function AIAssistant({ people, activities, currentWeekStart }: AIAssistan
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Type a command..."
+              placeholder="Tell me what you need..."
               className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={isProcessing}
             />

@@ -96,7 +96,12 @@ export function MonthView() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <h1 className="text-2xl md:text-3xl font-bold">Sky's Month</h1>
-          <ThemePicker currentTheme={currentTheme} onSelectTheme={selectTheme} />
+          <div className="flex items-center gap-4">
+            <div className="px-3 py-1.5 rounded-full text-sm font-medium" style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
+              Today: {format(new Date(), 'EEEE, MMM d')}
+            </div>
+            <ThemePicker currentTheme={currentTheme} onSelectTheme={selectTheme} />
+          </div>
         </div>
 
         {/* Month Navigation */}
