@@ -12,6 +12,7 @@ import {
   isSameMonth,
   isSaturday,
   parseISO,
+  getDay,
 } from 'date-fns';
 import { ThemePicker } from '../components/ThemePicker';
 import { ActivityPopup } from '../components/ActivityPopup';
@@ -21,6 +22,7 @@ import { useMonthSchedule } from '../hooks/useSchedule';
 import type { Activity, DaySchedule, SaturdaySchedule } from '../types';
 
 const WEEKDAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
 export function MonthView() {
   const { month } = useParams<{ month?: string }>();
@@ -69,6 +71,15 @@ export function MonthView() {
 
   const getActivityById = (id: string): Activity | undefined => {
     return activities.find((a) => a.id === id);
+  };
+
+  // Get recurring activities for a specific day of the week
+  const getRecurringActivitiesForDay = (date: Date): Activity[] => {
+    const dayOfWeek = getDay(date); // 0 = Sunday, 1 = Monday, etc.
+    const dayName = DAY_NAMES[dayOfWeek];
+    return activities.filter(
+      (a) => a.is_recurring && a.recurrence_day?.toLowerCase() === dayName
+    );
   };
 
   const handlePrevMonth = () => {
@@ -178,6 +189,7 @@ export function MonthView() {
 
                   {/* Activities */}
                   <div className="mt-1 space-y-1">
+                    {/* Explicitly assigned activity */}
                     {schedule?.after_gan_activity_id && (
                       <div
                         className="text-xs truncate"
@@ -192,6 +204,24 @@ export function MonthView() {
                         </span>
                       </div>
                     )}
+
+                    {/* Recurring activities for this day of week (if not already shown via explicit assignment) */}
+                    {!isSat && getRecurringActivitiesForDay(date)
+                      .filter((a) => a.id !== schedule?.after_gan_activity_id)
+                      .map((activity) => (
+                        <div
+                          key={activity.id}
+                          className="text-xs truncate"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedActivity(activity);
+                          }}
+                        >
+                          <span className="text-purple-600 hover:underline cursor-pointer">
+                            ○ {activity.name}
+                          </span>
+                        </div>
+                      ))}
 
                     {isSat && satSchedule?.activities?.map((act, idx) => {
                       const activity = getActivityById(act.activity_id);
@@ -218,10 +248,14 @@ export function MonthView() {
         </div>
 
         {/* Legend */}
-        <div className="flex items-center gap-6 mt-4 text-sm text-gray-600">
+        <div className="flex flex-wrap items-center gap-6 mt-4 text-sm text-gray-600">
           <div className="flex items-center gap-2">
-            <span>●</span>
-            <span>Activity</span>
+            <span className="text-blue-600">●</span>
+            <span>Scheduled Activity</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-purple-600">○</span>
+            <span>Recurring Activity</span>
           </div>
           <div className="flex items-center gap-2">
             <div
