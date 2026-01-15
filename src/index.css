@@ -1,3 +1,26 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --color-primary: #6EC6E6;
+  --color-secondary: #F4A460;
+  --color-background: #F0F8FF;
+  --color-gan: #87CEEB;
+  --color-no-gan: #FFE4B5;
+  --color-saturday: #E6F3E6;
+}
+
+body {
+  background-color: var(--color-background);
+}
+
+@media print {
+  body {
+    background-color: white;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}
