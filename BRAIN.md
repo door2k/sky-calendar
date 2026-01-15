@@ -161,6 +161,8 @@ Full design spec is at: `/Users/tamir/docs/plans/2025-01-15-sky-calendar-design.
 - **Verified monthly view**: Confirmed monthly calendar displays activities correctly
 - **Tested AI assistant**: Confirmed "set Asaf for drop-off on Sunday" correctly updates Sunday (Jan 11)
 - **Added recurring activities to monthly view**: Recurring activities now show on all their recurrence days (● blue = scheduled, ○ purple = recurring)
+- **Added delete activity support**: AI assistant can now delete activities (removes references from schedules first to avoid FK constraint errors)
+- **Added conversation history**: AI assistant now maintains context across messages in a session
 
 ---
 
