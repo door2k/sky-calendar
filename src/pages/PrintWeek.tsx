@@ -4,7 +4,7 @@ import { startOfWeek, addDays, format, parseISO } from 'date-fns';
 import { usePeople } from '../hooks/usePeople';
 import { useActivities } from '../hooks/useActivities';
 import { useWeekSchedule } from '../hooks/useSchedule';
-import type { Activity } from '../types';
+import type { Activity, SaturdayActivity } from '../types';
 
 export function PrintWeek() {
   const { date } = useParams<{ date: string }>();
@@ -179,7 +179,7 @@ export function PrintWeek() {
         <div className="font-bold">SATURDAY {format(weekDates[6], 'd')}</div>
         {weekData?.saturday?.activities && weekData.saturday.activities.length > 0 ? (
           <div className="mt-2">
-            {weekData.saturday.activities.map((act, idx) => {
+            {weekData.saturday.activities.map((act: SaturdayActivity, idx: number) => {
               const activity = getActivity(act.activity_id);
               return (
                 <div key={idx}>

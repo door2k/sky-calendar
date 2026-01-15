@@ -13,7 +13,7 @@ import {
 } from 'date-fns';
 import { useActivities } from '../hooks/useActivities';
 import { useMonthSchedule } from '../hooks/useSchedule';
-import type { Activity } from '../types';
+import type { Activity, SaturdayActivity } from '../types';
 
 export function PrintMonth() {
   const { month } = useParams<{ month: string }>();
@@ -158,7 +158,7 @@ export function PrintMonth() {
                       </div>
                     )}
 
-                    {isSat && satSchedule?.activities?.map((act, idx) => (
+                    {isSat && satSchedule?.activities?.map((act: SaturdayActivity, idx: number) => (
                       <div key={idx} className="text-xs">
                         {act.custom_name || getActivityById(act.activity_id)?.name}
                       </div>
@@ -183,7 +183,7 @@ export function PrintMonth() {
       {monthActivities.length > 0 && (
         <div className="border-t pt-4">
           <div className="font-bold mb-2">Activity Details:</div>
-          {monthActivities.map(({ activity, occurrences }) => (
+          {monthActivities.map(({ activity }) => (
             <div key={activity.id} className="text-sm mb-1">
               • <strong>{activity.name}</strong>
               {activity.is_recurring && activity.recurrence_day && (
