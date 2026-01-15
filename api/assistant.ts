@@ -18,11 +18,17 @@ interface Activity {
   default_time?: string;
 }
 
+interface ConversationMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 interface RequestBody {
   message: string;
   people: Person[];
   activities: Activity[];
   currentWeekStart: string;
+  conversationHistory?: ConversationMessage[];
 }
 
 const SYSTEM_PROMPT = `You are a helpful assistant for managing Sky's schedule calendar. Sky is a child who goes to Gan (kindergarten) in Israel.
@@ -89,7 +95,15 @@ Return a JSON array of actions. Each action has a "type" and relevant fields:
    }
    \`\`\`
 
-4. **message** - Send a message back to the user (for confirmations or questions)
+4. **delete_activity** - Delete an activity (removes it completely, including all recurrences)
+   \`\`\`json
+   {
+     "type": "delete_activity",
+     "activity_id": "uuid"
+   }
+   \`\`\`
+
+5. **message** - Send a message back to the user (for confirmations or questions)
    \`\`\`json
    {
      "type": "message",
@@ -151,13 +165,13 @@ export default async function handler(req: Request): Promise<Response> {
 
   try {
     const body: RequestBody = await req.json();
-    const { message, people, activities, currentWeekStart } = body;
+    const { message, people, activities, currentWeekStart, conversationHistory = [] } = body;
 
     // Generate explicit dates for each day of the week
     const weekDates = getWeekDates(currentWeekStart);
     const weekDatesStr = weekDates.map(d => `- ${d.day}: ${d.date}`).join('\n');
 
-    const userContext = `
+    const contextInfo = `
 ## Current Context
 
 **This Week's Dates (USE THESE EXACT DATES):**
@@ -169,22 +183,43 @@ ${people.map(p => `- ${p.name} (${p.role}): ID="${p.id}"`).join('\n')}
 **Activities:**
 ${activities.length > 0 ? activities.map(a => `- ${a.name}${a.is_recurring ? ` (recurring: ${a.recurrence_day} at ${a.default_time})` : ''}: ID="${a.id}"`).join('\n') : '(none yet)'}
 
-**User Request:** ${message}
+IMPORTANT: When updating days, use the exact dates listed above. For example, if this week's Sunday is 2026-01-11, use "2026-01-11" for Sunday.`;
 
-IMPORTANT: When updating days, use the exact dates listed above. For example, if this week's Sunday is 2026-01-11, use "2026-01-11" for Sunday.
+    // Build messages array with conversation history
+    const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [];
 
-Respond with a JSON array of actions.`;
+    // Add context as first user message
+    messages.push({
+      role: 'user',
+      content: contextInfo + '\n\nI will now give you requests. Respond with a JSON array of actions for each.',
+    });
+    messages.push({
+      role: 'assistant',
+      content: 'Understood! I have the context about Sky\'s schedule, the people, activities, and this week\'s dates. Please tell me what you need and I\'ll respond with the appropriate actions.',
+    });
+
+    // Add conversation history (limit to last 10 exchanges to avoid token limits)
+    const recentHistory = conversationHistory.slice(-20);
+    for (const msg of recentHistory) {
+      messages.push({
+        role: msg.role,
+        content: msg.role === 'user'
+          ? `User request: ${msg.content}\n\nRespond with a JSON array of actions.`
+          : msg.content,
+      });
+    }
+
+    // Add current message
+    messages.push({
+      role: 'user',
+      content: `User request: ${message}\n\nRespond with a JSON array of actions.`,
+    });
 
     const response = await client.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 1024,
       system: SYSTEM_PROMPT,
-      messages: [
-        {
-          role: 'user',
-          content: userContext,
-        },
-      ],
+      messages,
     });
 
     // Extract the text content

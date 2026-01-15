@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { format } from 'date-fns';
 import { useUpdateDaySchedule } from '../hooks/useSchedule';
-import { useCreateActivity } from '../hooks/useActivities';
+import { useCreateActivity, useDeleteActivity } from '../hooks/useActivities';
 import type { Person, Activity } from '../types';
 
 interface AIAssistantProps {
@@ -16,7 +16,7 @@ interface Message {
 }
 
 interface AssistantAction {
-  type: 'update_day' | 'create_activity' | 'assign_activity' | 'message';
+  type: 'update_day' | 'create_activity' | 'assign_activity' | 'delete_activity' | 'message';
   date?: string;
   updates?: Record<string, unknown>;
   activity?: Omit<Activity, 'id'>;
@@ -41,6 +41,7 @@ export function AIAssistant({ people, activities, currentWeekStart }: AIAssistan
 
   const updateDay = useUpdateDaySchedule();
   const createActivity = useCreateActivity();
+  const deleteActivity = useDeleteActivity();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -102,6 +103,14 @@ export function AIAssistant({ people, activities, currentWeekStart }: AIAssistan
             break;
           }
 
+          case 'delete_activity': {
+            if (action.activity_id) {
+              await deleteActivity.mutateAsync(action.activity_id);
+              results.push(`Deleted activity`);
+            }
+            break;
+          }
+
           case 'message': {
             if (action.text) {
               addMessage('assistant', action.text);
@@ -128,6 +137,12 @@ export function AIAssistant({ people, activities, currentWeekStart }: AIAssistan
     setIsProcessing(true);
 
     try {
+      // Get conversation history (exclude the initial greeting)
+      const conversationHistory = messages.slice(1).map(m => ({
+        role: m.role,
+        content: m.content,
+      }));
+
       const response = await fetch('/api/assistant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -136,6 +151,7 @@ export function AIAssistant({ people, activities, currentWeekStart }: AIAssistan
           people,
           activities,
           currentWeekStart: format(currentWeekStart, 'yyyy-MM-dd'),
+          conversationHistory,
         }),
       });
 
