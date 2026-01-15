@@ -8,6 +8,8 @@
 
 A website to manage Sky's (a child) weekly and monthly schedule in Israel. Shows daily routines (drop-off, Gan activities, pickup, after-school activities, bedtime) with support for themes, printing, and an AI assistant.
 
+**Sky** is the child. **Gan** = kindergarten in Hebrew.
+
 ## Tech Stack
 
 - **Frontend:** React 18 + TypeScript + Vite + Tailwind CSS
@@ -21,7 +23,8 @@ A website to manage Sky's (a child) weekly and monthly schedule in Israel. Shows
 
 - **Live Site:** https://sky-calendar.vercel.app
 - **GitHub:** https://github.com/door2k/sky-calendar
-- **Supabase:** https://supabase.com/dashboard/project/thzesmfiecccpvuzuscd
+- **Supabase Dashboard:** https://supabase.com/dashboard/project/thzesmfiecccpvuzuscd
+- **Supabase SQL Editor:** https://supabase.com/dashboard/project/thzesmfiecccpvuzuscd/sql/new
 
 ## Environment Variables (Vercel)
 
@@ -34,19 +37,32 @@ A website to manage Sky's (a child) weekly and monthly schedule in Israel. Shows
 ### Tables
 
 1. **people** - Fixed list of caregivers
-   - Asaf (Aba), Tamir (Aba), Gili & Yossi (Savta & Saba), Simcha (Savta), Maya (Babysitter)
+   - id (uuid), name, role, created_at
+   - Current people: Asaf (Aba), Tamir (Aba), Gili & Yossi (Savta & Saba), Simcha (Savta), Maya (Babysitter)
 
 2. **activities** - Recurring or one-time activities
-   - name, address, maps_url, contact_phone, note, is_recurring, recurrence_day, default_time
+   - id (uuid), name, address, maps_url, contact_phone, note, is_recurring, recurrence_day, default_time, created_at
 
-3. **day_schedules** - Weekday schedules (Sun-Fri)
-   - date, dropoff_person_id, pickup_person_id, bedtime_person_id, after_gan_activity_id, after_gan_time, gan_activity, is_no_gan, no_gan_reason, notes
+3. **day_schedules** - Weekday schedules (Sun-Fri ONLY)
+   - id, date, dropoff_person_id, pickup_person_id, bedtime_person_id, after_gan_activity_id, after_gan_time, gan_activity, is_no_gan, no_gan_reason, notes, created_at, updated_at
 
-4. **saturday_schedules** - Saturday schedules (no Gan)
-   - date, activities (JSONB array), notes
+4. **saturday_schedules** - Saturday schedules (DIFFERENT structure - no Gan on Saturdays)
+   - id, date, **activities** (JSONB array of `{activity_id, time}`), notes, created_at, updated_at
+   - **CRITICAL:** Saturday uses `activities` JSONB array, NOT `after_gan_activity_id`
 
 5. **settings** - App settings
    - current_theme, theme_randomized_week, previous_week_theme
+
+### CRITICAL: Weekday vs Saturday Data Model
+
+This caused bugs - document it clearly:
+
+| Field | Weekdays (Sun-Fri) | Saturday |
+|-------|-------------------|----------|
+| Table | `day_schedules` | `saturday_schedules` |
+| Activity storage | `after_gan_activity_id` (single UUID) | `activities` (JSONB array) |
+| API action | `assign_activity` | `update_saturday` |
+| Can have multiple activities | No (one after-gan activity) | Yes (array of activities) |
 
 ## Features Implemented
 
@@ -68,22 +84,27 @@ A website to manage Sky's (a child) weekly and monthly schedule in Israel. Shows
 - [x] Creates activities AND assigns them to schedules
 - [x] Asks clarifying questions when needed
 - [x] Bulk updates (multiple days at once)
+- [x] Saturday activity support (uses `update_saturday` action)
+- [x] Delete activity support
+- [x] Conversation history (maintains context across messages)
 
 **Supported Commands:**
 - "Set Tamir for pickup on Monday and Tuesday"
 - "Set Tamir for drop-off every day except Thursday and Friday"
 - "Add a hip hop class on Mondays at 4:30pm in Gan Meir"
 - "Mark Friday as no gan because of a holiday"
+- "Add a pizza party to Saturday at 6pm"
+- "Delete the swimming activity"
 
 ## Project Structure
 
 ```
 sky-calendar/
 ├── api/
-│   └── assistant.ts        # Claude API serverless function
+│   └── assistant.ts        # Claude API serverless function (edge runtime)
 ├── src/
 │   ├── components/
-│   │   ├── AIAssistant.tsx  # AI chat interface
+│   │   ├── AIAssistant.tsx  # AI chat interface + action executor
 │   │   ├── DayCard.tsx      # Day card component
 │   │   ├── ThemePicker.tsx  # Theme selector
 │   │   ├── ActivityPopup.tsx
@@ -92,15 +113,15 @@ sky-calendar/
 │   ├── hooks/
 │   │   ├── usePeople.ts
 │   │   ├── useActivities.ts
-│   │   ├── useSchedule.ts
+│   │   ├── useSchedule.ts   # Has useUpdateDaySchedule, useUpdateSaturdaySchedule
 │   │   └── useTheme.ts
 │   ├── lib/
 │   │   ├── supabase.ts      # Supabase client
 │   │   ├── themes.ts        # Theme definitions
 │   │   └── scheduleParser.ts # (legacy, not used)
 │   ├── pages/
-│   │   ├── WeekView.tsx
-│   │   ├── MonthView.tsx
+│   │   ├── WeekView.tsx     # Main weekly view (has AI assistant)
+│   │   ├── MonthView.tsx    # Monthly calendar view
 │   │   ├── PrintWeek.tsx
 │   │   └── PrintMonth.tsx
 │   ├── types/
@@ -113,6 +134,42 @@ sky-calendar/
 └── tailwind.config.js
 ```
 
+## AI Assistant Architecture
+
+### How It Works
+
+1. **Frontend (`AIAssistant.tsx`):**
+   - Sends user message + context (people, activities, schedules, week dates) to `/api/assistant`
+   - Receives JSON array of actions
+   - Executes actions in sorted order (create before assign/update)
+
+2. **Backend (`api/assistant.ts`):**
+   - Receives context and builds a system prompt with explicit week dates
+   - Calls Claude API (claude-sonnet-4-20250514)
+   - Returns JSON array of actions
+
+### Action Types
+
+```typescript
+type ActionType =
+  | 'update_day'       // Update weekday schedule fields
+  | 'create_activity'  // Create new activity definition
+  | 'assign_activity'  // Assign activity to WEEKDAY (NOT Saturday!)
+  | 'delete_activity'  // Delete an activity
+  | 'update_saturday'  // Update Saturday schedule (ONLY way to add Saturday activities)
+  | 'message'          // Send message back to user
+```
+
+### Action Execution Order
+
+Actions are sorted before execution to handle dependencies:
+1. `create_activity` (0) - Must run first to get new activity ID
+2. `update_day` (1)
+3. `assign_activity` (2) - Uses activity ID from step 1
+4. `delete_activity` (3)
+5. `update_saturday` (4) - Uses activity ID from step 1
+6. `message` (5)
+
 ## Current State
 
 ### What's Working
@@ -122,14 +179,19 @@ sky-calendar/
 - AI assistant uses correct dates (explicit week date mapping)
 - Drop-off, pickup, bedtime assignments work
 - Activity creation and assignment to schedules works
+- Saturday activities work (after fixing missing column)
 - Themes change correctly
 - "Today" badge shows current date in both weekly and monthly views
 
 ### Known Issues / TODO
-- [x] Monthly view shows grid but activities may not display (needs verification) - **FIXED: Verified working**
-- [x] AI sometimes gets confused about exact dates (says Monday but means Tuesday) - **FIXED: Added explicit week dates to API prompt**
+- [x] Monthly view shows grid but activities may not display - **FIXED**
+- [x] AI sometimes gets confused about exact dates - **FIXED: explicit week dates**
+- [x] Saturday activities don't save - **FIXED: added `activities` column**
 - [ ] No authentication yet (public edit access)
 - [ ] No Google Calendar sync yet
+
+### Feature Requests (Backlog)
+- [ ] AI assistant available in monthly view (currently only in weekly view)
 
 ## Development Notes
 
@@ -147,25 +209,74 @@ git push origin main
 npx vercel --prod --yes
 ```
 
-### Testing AI Assistant Locally
-The AI assistant requires the `ANTHROPIC_API_KEY` environment variable. It only works in production (Vercel) since it uses edge functions.
+### Testing AI Assistant
+- The AI assistant only works in production (Vercel edge functions)
+- **IMPORTANT:** When testing, prefix activity names with "TEST" (e.g., "TEST - pizza party")
+- Clean up test data after testing by deleting from Supabase SQL Editor
 
-## Design Document
+### Debugging Tips
 
-Full design spec is at: `/Users/tamir/docs/plans/2025-01-15-sky-calendar-design.md`
+**If AI assistant says it did something but nothing changed:**
+1. Add debug logging to `AIAssistant.tsx` `executeActions()` function
+2. Check browser console for errors
+3. Common issues:
+   - Missing database column (check Supabase table structure)
+   - Wrong action type (Saturday needs `update_saturday`, not `assign_activity`)
+   - Action ordering (create must happen before assign)
+
+**Checking database directly:**
+- Go to Supabase SQL Editor: https://supabase.com/dashboard/project/thzesmfiecccpvuzuscd/sql/new
+- Query activities: `SELECT * FROM activities;`
+- Query Saturday schedules: `SELECT * FROM saturday_schedules WHERE date = '2026-01-17';`
+
+### Vercel Logs
+```bash
+npx vercel logs sky-calendar.vercel.app --since 5m
+```
 
 ## Changelog
 
-### 2026-01-15
-- **Fixed AI date offset bug**: Added `getWeekDates()` helper in `api/assistant.ts` that generates explicit dates for each day of the week, preventing Claude from miscalculating dates
+### 2026-01-15 (Latest Session)
+- **Fixed Saturday activity bug**: Root cause was missing `activities` JSONB column in `saturday_schedules` table
+- **Added `activities` column**: `ALTER TABLE saturday_schedules ADD COLUMN activities jsonb DEFAULT '[]'::jsonb;`
+- **Fixed action ordering**: Actions now sorted so `create_activity` runs before `assign_activity`/`update_saturday`
+- **Cleaned up test data**: Removed test activities (swimming, park playdate, movie night, pizza party)
+- **Established testing convention**: Prefix test activities with "TEST"
+
+### 2026-01-15 (Earlier)
+- **Fixed AI date offset bug**: Added `getWeekDates()` helper in `api/assistant.ts`
 - **Verified monthly view**: Confirmed monthly calendar displays activities correctly
-- **Tested AI assistant**: Confirmed "set Asaf for drop-off on Sunday" correctly updates Sunday (Jan 11)
-- **Added recurring activities to monthly view**: Recurring activities now show on all their recurrence days (● blue = scheduled, ○ purple = recurring)
-- **Added delete activity support**: AI assistant can now delete activities (removes references from schedules first to avoid FK constraint errors)
-- **Added conversation history**: AI assistant now maintains context across messages in a session
-- **Fixed Saturday activity support**: Added `update_saturday` action type to API and frontend handler
-- **Fixed missing database column**: Added `activities` JSONB column to `saturday_schedules` table (was missing from original schema)
-- **Improved action ordering**: Actions are now sorted so `create_activity` runs before `assign_activity`/`update_saturday` to ensure new activity IDs are available
+- **Added recurring activities to monthly view**: ● blue = scheduled, ○ purple = recurring
+- **Added delete activity support**: AI can delete activities (removes refs first)
+- **Added conversation history**: AI maintains context across messages in session
+- **Fixed Saturday activity support**: Added `update_saturday` action type
+
+## Quick Reference
+
+### Common SQL Queries
+
+```sql
+-- See all activities
+SELECT * FROM activities ORDER BY name;
+
+-- See Saturday schedule for a date
+SELECT * FROM saturday_schedules WHERE date = '2026-01-17';
+
+-- Clear Saturday activities
+UPDATE saturday_schedules SET activities = '[]'::jsonb WHERE date = '2026-01-17';
+
+-- Delete test activities
+DELETE FROM activities WHERE name LIKE 'TEST%';
+
+-- See all people
+SELECT * FROM people;
+```
+
+### Key Files to Check When Debugging
+
+1. `api/assistant.ts` - Claude API integration, action definitions
+2. `src/components/AIAssistant.tsx` - Action execution logic
+3. `src/hooks/useSchedule.ts` - Supabase mutations for schedules
 
 ---
 
