@@ -42,6 +42,15 @@ export function useDeleteActivity() {
 
   return useMutation({
     mutationFn: async (activityId: string) => {
+      // First, remove any references to this activity in day_schedules
+      const { error: updateError } = await supabase
+        .from('day_schedules')
+        .update({ after_gan_activity_id: null, after_gan_time: null })
+        .eq('after_gan_activity_id', activityId);
+
+      if (updateError) throw updateError;
+
+      // Then delete the activity
       const { error } = await supabase
         .from('activities')
         .delete()
