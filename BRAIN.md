@@ -160,6 +160,7 @@ Full design spec is at: `/Users/tamir/docs/plans/2025-01-15-sky-calendar-design.
 - **Fixed AI date offset bug**: Added `getWeekDates()` helper in `api/assistant.ts` that generates explicit dates for each day of the week, preventing Claude from miscalculating dates
 - **Verified monthly view**: Confirmed monthly calendar displays activities correctly
 - **Tested AI assistant**: Confirmed "set Asaf for drop-off on Sunday" correctly updates Sunday (Jan 11)
+- **Added recurring activities to monthly view**: Recurring activities now show on all their recurrence days (● blue = scheduled, ○ purple = recurring)
 
 ---
 
