@@ -163,6 +163,9 @@ Full design spec is at: `/Users/tamir/docs/plans/2025-01-15-sky-calendar-design.
 - **Added recurring activities to monthly view**: Recurring activities now show on all their recurrence days (● blue = scheduled, ○ purple = recurring)
 - **Added delete activity support**: AI assistant can now delete activities (removes references from schedules first to avoid FK constraint errors)
 - **Added conversation history**: AI assistant now maintains context across messages in a session
+- **Fixed Saturday activity support**: Added `update_saturday` action type to API and frontend handler
+- **Fixed missing database column**: Added `activities` JSONB column to `saturday_schedules` table (was missing from original schema)
+- **Improved action ordering**: Actions are now sorted so `create_activity` runs before `assign_activity`/`update_saturday` to ensure new activity IDs are available
 
 ---
 

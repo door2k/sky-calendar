@@ -64,15 +64,7 @@ export function AIAssistant({ people, activities, currentWeekStart, schedules = 
   const executeActions = async (actions: AssistantAction[]) => {
     const results: string[] = [];
 
-    // Debug: log the raw actions from Claude
-    console.log('Raw actions from Claude:', JSON.stringify(actions, null, 2));
-
-    // Debug: Show action types in chat for debugging (temporary)
-    const actionTypes = actions.map(a => a.type).join(', ');
-    console.log('Action types received:', actionTypes);
-    addMessage('assistant', `[DEBUG] Actions received: ${actionTypes}`);
-
-    // Sort actions so create_activity runs before assign_activity
+    // Sort actions so create_activity runs before assign_activity/update_saturday
     // This ensures the new activity ID is available for assignment
     const actionOrder: Record<string, number> = {
       'create_activity': 0,
@@ -85,8 +77,6 @@ export function AIAssistant({ people, activities, currentWeekStart, schedules = 
     const sortedActions = [...actions].sort(
       (a, b) => (actionOrder[a.type] ?? 99) - (actionOrder[b.type] ?? 99)
     );
-
-    console.log('Sorted actions:', JSON.stringify(sortedActions, null, 2));
 
     for (const action of sortedActions) {
       try {
@@ -106,18 +96,14 @@ export function AIAssistant({ people, activities, currentWeekStart, schedules = 
             if (action.activity) {
               const newActivity = await createActivity.mutateAsync(action.activity);
               results.push(`Created activity: ${newActivity.name}`);
-              console.log('Created activity with ID:', newActivity.id);
-              addMessage('assistant', `[DEBUG] Created activity ID: ${newActivity.id}`);
 
               // If there's also an assign_activity action for this new activity,
               // we need to update its activity_id
               const assignAction = sortedActions.find(
                 a => a.type === 'assign_activity' && !a.activity_id
               );
-              console.log('Found assignAction:', assignAction);
               if (assignAction) {
                 assignAction.activity_id = newActivity.id;
-                console.log('Updated assignAction with ID:', assignAction);
               }
 
               // If there's also an update_saturday action, update its activities array
@@ -125,16 +111,11 @@ export function AIAssistant({ people, activities, currentWeekStart, schedules = 
               const saturdayAction = sortedActions.find(
                 a => a.type === 'update_saturday'
               );
-              console.log('Found saturdayAction:', saturdayAction);
-              addMessage('assistant', `[DEBUG] Found saturdayAction: ${JSON.stringify(saturdayAction)}`);
-
               if (saturdayAction && saturdayAction.activities) {
                 // Find the first activity without an activity_id and set it
                 for (const act of saturdayAction.activities) {
                   if (!act.activity_id) {
                     act.activity_id = newActivity.id;
-                    console.log('Set activity_id on:', act);
-                    addMessage('assistant', `[DEBUG] Set activity_id on activity: ${JSON.stringify(act)}`);
                     break; // Only set one per create_activity
                   }
                 }
@@ -144,17 +125,13 @@ export function AIAssistant({ people, activities, currentWeekStart, schedules = 
           }
 
           case 'assign_activity': {
-            console.log('Processing assign_activity:', action);
             if (action.date && action.activity_id) {
-              console.log('Assigning activity', action.activity_id, 'to date', action.date);
               await updateDay.mutateAsync({
                 date: action.date,
                 after_gan_activity_id: action.activity_id,
                 after_gan_time: action.time,
               });
               results.push(`Assigned activity to ${action.date}`);
-            } else {
-              console.log('Skipping assign_activity - missing date or activity_id:', { date: action.date, activity_id: action.activity_id });
             }
             break;
           }
@@ -168,36 +145,17 @@ export function AIAssistant({ people, activities, currentWeekStart, schedules = 
           }
 
           case 'update_saturday': {
-            console.log('Processing update_saturday:', action);
-            addMessage('assistant', `[DEBUG] update_saturday action: ${JSON.stringify(action)}`);
             if (action.date && action.activities) {
               // Filter to only activities with valid activity_ids
               const validActivities = action.activities.filter(act => act.activity_id);
-              console.log('Valid activities for Saturday:', validActivities);
-              addMessage('assistant', `[DEBUG] Valid activities after filter: ${JSON.stringify(validActivities)}`);
               if (validActivities.length > 0) {
-                try {
-                  const payload = {
-                    date: action.date,
-                    activities: validActivities,
-                    notes: action.notes,
-                  };
-                  addMessage('assistant', `[DEBUG] Calling updateSaturday with: ${JSON.stringify(payload)}`);
-                  await updateSaturday.mutateAsync(payload);
-                  results.push(`Updated Saturday ${action.date}`);
-                  addMessage('assistant', `[DEBUG] Saturday update SUCCESS for ${action.date}`);
-                } catch (err) {
-                  console.error('Saturday update failed:', err);
-                  const errorMsg = err instanceof Error ? err.message : JSON.stringify(err);
-                  addMessage('assistant', `[DEBUG] Saturday update FAILED: ${errorMsg}`);
-                }
-              } else {
-                console.log('No valid activities for Saturday update');
-                addMessage('assistant', `[DEBUG] No valid activities - skipping Saturday update`);
+                await updateSaturday.mutateAsync({
+                  date: action.date,
+                  activities: validActivities,
+                  notes: action.notes,
+                });
+                results.push(`Updated Saturday ${action.date}`);
               }
-            } else {
-              console.log('Missing date or activities for update_saturday');
-              addMessage('assistant', `[DEBUG] Missing date or activities for update_saturday`);
             }
             break;
           }
