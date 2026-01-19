@@ -28,6 +28,48 @@ interface AssistantAction {
   notes?: string;
 }
 
+// Type definitions for Web Speech API
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionResultList {
+  length: number;
+  item(index: number): SpeechRecognitionResult;
+  [index: number]: SpeechRecognitionResult;
+}
+
+interface SpeechRecognitionResult {
+  length: number;
+  item(index: number): SpeechRecognitionAlternative;
+  [index: number]: SpeechRecognitionAlternative;
+  isFinal: boolean;
+}
+
+interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start(): void;
+  stop(): void;
+  abort(): void;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: Event) => void) | null;
+  onend: (() => void) | null;
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition?: new () => SpeechRecognition;
+    webkitSpeechRecognition?: new () => SpeechRecognition;
+  }
+}
+
 export function AIAssistant({ people, activities, currentWeekStart, schedules = [] }: AIAssistantProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
@@ -38,9 +80,15 @@ export function AIAssistant({ people, activities, currentWeekStart, schedules = 
     },
   ]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isListening, setIsListening] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  // Check for Web Speech API support
+  const speechSupported = typeof window !== 'undefined' &&
+    (!!window.SpeechRecognition || !!window.webkitSpeechRecognition);
 
   const updateDay = useUpdateDaySchedule();
   const updateSaturday = useUpdateSaturdaySchedule();
@@ -56,6 +104,62 @@ export function AIAssistant({ people, activities, currentWeekStart, schedules = 
       inputRef.current?.focus();
     }
   }, [isOpen]);
+
+  // Cleanup speech recognition on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+      }
+    };
+  }, []);
+
+  const toggleVoiceInput = () => {
+    if (!speechSupported) return;
+
+    if (isListening) {
+      // Stop listening
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsListening(false);
+      return;
+    }
+
+    // Start listening
+    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognitionAPI) return;
+
+    const recognition = new SpeechRecognitionAPI();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onresult = (event) => {
+      let transcript = '';
+      for (let i = 0; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
+      }
+      setInput(transcript);
+
+      // If result is final, auto-submit
+      if (event.results[event.results.length - 1].isFinal) {
+        setIsListening(false);
+      }
+    };
+
+    recognition.onerror = () => {
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsListening(true);
+  };
 
   const addMessage = (role: 'user' | 'assistant', content: string) => {
     setMessages((prev) => [...prev, { role, content }]);
@@ -86,6 +190,7 @@ export function AIAssistant({ people, activities, currentWeekStart, schedules = 
               await updateDay.mutateAsync({
                 date: action.date,
                 ...action.updates,
+                updated_by: 'AI Assistant',
               } as Parameters<typeof updateDay.mutateAsync>[0]);
               results.push(`Updated ${action.date}`);
             }
@@ -94,7 +199,10 @@ export function AIAssistant({ people, activities, currentWeekStart, schedules = 
 
           case 'create_activity': {
             if (action.activity) {
-              const newActivity = await createActivity.mutateAsync(action.activity);
+              const newActivity = await createActivity.mutateAsync({
+                ...action.activity,
+                created_by: 'AI Assistant',
+              });
               results.push(`Created activity: ${newActivity.name}`);
 
               // If there's also an assign_activity action for this new activity,
@@ -130,6 +238,7 @@ export function AIAssistant({ people, activities, currentWeekStart, schedules = 
                 date: action.date,
                 after_gan_activity_id: action.activity_id,
                 after_gan_time: action.time,
+                updated_by: 'AI Assistant',
               });
               results.push(`Assigned activity to ${action.date}`);
             }
@@ -153,6 +262,7 @@ export function AIAssistant({ people, activities, currentWeekStart, schedules = 
                   date: action.date,
                   activities: validActivities,
                   notes: action.notes,
+                  updated_by: 'AI Assistant',
                 });
                 results.push(`Updated Saturday ${action.date}`);
               }
@@ -275,15 +385,34 @@ export function AIAssistant({ people, activities, currentWeekStart, schedules = 
 
           {/* Input */}
           <form onSubmit={handleSubmit} className="p-3 border-t">
-            <input
-              ref={inputRef}
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Tell me what you need..."
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={isProcessing}
-            />
+            <div className="flex gap-2">
+              <input
+                ref={inputRef}
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder={isListening ? 'Listening...' : 'Tell me what you need...'}
+                className={`flex-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  isListening ? 'border-red-400 bg-red-50' : ''
+                }`}
+                disabled={isProcessing}
+              />
+              {speechSupported && (
+                <button
+                  type="button"
+                  onClick={toggleVoiceInput}
+                  disabled={isProcessing}
+                  className={`px-3 py-2 rounded-lg text-white transition-colors ${
+                    isListening
+                      ? 'bg-red-500 hover:bg-red-600 animate-pulse'
+                      : 'bg-gray-500 hover:bg-gray-600'
+                  }`}
+                  aria-label={isListening ? 'Stop listening' : 'Start voice input'}
+                >
+                  🎤
+                </button>
+              )}
+            </div>
           </form>
         </div>
       )}

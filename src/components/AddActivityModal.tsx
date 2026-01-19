@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import type { Activity } from '../types';
+import type { Activity, Person } from '../types';
 
 interface AddActivityModalProps {
   onSave: (activity: Omit<Activity, 'id'>) => void;
   onClose: () => void;
+  people?: Person[];
 }
 
 const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
@@ -12,7 +13,7 @@ function generateMapsUrl(address: string): string {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
 }
 
-export function AddActivityModal({ onSave, onClose }: AddActivityModalProps) {
+export function AddActivityModal({ onSave, onClose, people = [] }: AddActivityModalProps) {
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
   const [contactPhone, setContactPhone] = useState('');
@@ -20,6 +21,7 @@ export function AddActivityModal({ onSave, onClose }: AddActivityModalProps) {
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurrenceDay, setRecurrenceDay] = useState('');
   const [defaultTime, setDefaultTime] = useState('');
+  const [createdBy, setCreatedBy] = useState('');
 
   const handleSave = () => {
     if (!name.trim()) return;
@@ -33,6 +35,7 @@ export function AddActivityModal({ onSave, onClose }: AddActivityModalProps) {
       is_recurring: isRecurring,
       recurrence_day: isRecurring && recurrenceDay ? recurrenceDay.toLowerCase() : undefined,
       default_time: isRecurring && defaultTime ? defaultTime : undefined,
+      created_by: createdBy || undefined,
     });
     onClose();
   };
@@ -138,21 +141,38 @@ export function AddActivityModal({ onSave, onClose }: AddActivityModalProps) {
           </div>
         </div>
 
-        <div className="flex gap-2 p-4 border-t sticky bottom-0 bg-white">
-          <button
-            onClick={onClose}
-            className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={!name.trim()}
-            className="flex-1 px-4 py-2 rounded-lg text-white disabled:opacity-50"
-            style={{ backgroundColor: 'var(--color-primary)' }}
-          >
-            Save
-          </button>
+        <div className="p-4 border-t sticky bottom-0 bg-white space-y-3">
+          {people.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium mb-1">Who's adding this?</label>
+              <select
+                value={createdBy}
+                onChange={(e) => setCreatedBy(e.target.value)}
+                className="w-full border rounded-lg p-2"
+              >
+                <option value="">Select person (optional)...</option>
+                {people.map((p) => (
+                  <option key={p.id} value={p.name}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          <div className="flex gap-2">
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={!name.trim()}
+              className="flex-1 px-4 py-2 rounded-lg text-white disabled:opacity-50"
+              style={{ backgroundColor: 'var(--color-primary)' }}
+            >
+              Save
+            </button>
+          </div>
         </div>
       </div>
     </div>

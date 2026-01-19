@@ -1,5 +1,6 @@
 import { format, isSaturday } from 'date-fns';
 import type { DaySchedule, SaturdaySchedule, Person, Activity } from '../types';
+import { PersonAvatar } from './PersonAvatar';
 
 interface DayCardProps {
   date: Date;
@@ -9,6 +10,7 @@ interface DayCardProps {
   activities: Activity[];
   onEdit: () => void;
   onActivityClick: (activity: Activity) => void;
+  isToday?: boolean;
 }
 
 export function DayCard({
@@ -19,14 +21,21 @@ export function DayCard({
   activities,
   onEdit,
   onActivityClick,
+  isToday = false,
 }: DayCardProps) {
   const dayName = format(date, 'EEEE').toUpperCase();
   const dayNumber = format(date, 'd');
   const isSat = isSaturday(date);
 
-  const getPersonName = (id?: string) => {
-    if (!id) return '—';
-    return people.find((p) => p.id === id)?.name || '—';
+  const getPerson = (id?: string): Person | null => {
+    if (!id) return null;
+    return people.find((p) => p.id === id) || null;
+  };
+
+  const renderPerson = (id?: string) => {
+    const person = getPerson(id);
+    if (!person) return <span>—</span>;
+    return <PersonAvatar person={person} size="sm" />;
   };
 
   const getActivity = (id?: string) => {
@@ -38,7 +47,9 @@ export function DayCard({
     return (
       <div
         onClick={onEdit}
-        className="rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow col-span-full"
+        className={`rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow col-span-full ${
+          isToday ? 'ring-4 ring-yellow-400 shadow-lg' : ''
+        }`}
         style={{ backgroundColor: 'var(--color-saturday)' }}
       >
         <div className="font-bold text-lg mb-2">
@@ -84,7 +95,7 @@ export function DayCard({
       onClick={onEdit}
       className={`rounded-lg overflow-hidden cursor-pointer hover:shadow-md transition-shadow ${
         isNoGan ? 'ring-2 ring-orange-400' : ''
-      }`}
+      } ${isToday ? 'ring-4 ring-yellow-400 shadow-lg' : ''}`}
       style={{ backgroundColor: isNoGan ? 'var(--color-no-gan)' : 'white' }}
     >
       {isNoGan && (
@@ -107,7 +118,7 @@ export function DayCard({
             style={{ backgroundColor: isNoGan ? 'transparent' : 'var(--color-gan)' }}
           >
             <span>🌅</span>
-            <span>{getPersonName(schedule?.dropoff_person_id)}</span>
+            {renderPerson(schedule?.dropoff_person_id)}
           </div>
 
           <div
@@ -123,7 +134,7 @@ export function DayCard({
             style={{ backgroundColor: isNoGan ? 'transparent' : 'var(--color-gan)' }}
           >
             <span>🌆</span>
-            <span>{getPersonName(schedule?.pickup_person_id)}</span>
+            {renderPerson(schedule?.pickup_person_id)}
           </div>
 
           <div className="flex items-center gap-2 p-2 rounded bg-gray-50">
@@ -149,7 +160,7 @@ export function DayCard({
 
           <div className="flex items-center gap-2 p-2 rounded bg-gray-50">
             <span>🌙</span>
-            <span>{getPersonName(schedule?.bedtime_person_id)}</span>
+            {renderPerson(schedule?.bedtime_person_id)}
           </div>
         </div>
       </div>

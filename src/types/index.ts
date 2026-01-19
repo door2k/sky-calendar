@@ -3,6 +3,7 @@ export interface Person {
   name: string;
   role: string;
   avatar_url?: string;
+  avatar_url_2?: string; // For combined entries like "Gili & Yossi" - displays second avatar
 }
 
 export interface Activity {
@@ -15,6 +16,7 @@ export interface Activity {
   is_recurring: boolean;
   recurrence_day?: string; // e.g., "wednesday"
   default_time?: string; // e.g., "17:15"
+  created_by?: string;
 }
 
 export interface DaySchedule {
@@ -29,6 +31,8 @@ export interface DaySchedule {
   is_no_gan: boolean;
   no_gan_reason?: string;
   notes?: string;
+  created_by?: string;
+  updated_by?: string;
 }
 
 export interface SaturdayActivity {
@@ -42,6 +46,8 @@ export interface SaturdaySchedule {
   date: string;
   activities: SaturdayActivity[];
   notes?: string;
+  created_by?: string;
+  updated_by?: string;
 }
 
 export interface Settings {

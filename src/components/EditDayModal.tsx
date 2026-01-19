@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { format, isSaturday } from 'date-fns';
 import type { DaySchedule, SaturdaySchedule, Person, Activity } from '../types';
+import { PersonAvatar } from './PersonAvatar';
 
 interface EditDayModalProps {
   date: Date;
@@ -43,12 +44,16 @@ export function EditDayModal({
   const [satActivities, setSatActivities] = useState(saturdaySchedule?.activities || []);
   const [satNotes, setSatNotes] = useState(saturdaySchedule?.notes || '');
 
+  // Creator tracking state
+  const [updatedBy, setUpdatedBy] = useState('');
+
   const handleSave = () => {
     if (isSat) {
       onSave({
         date: dateStr,
         activities: satActivities,
         notes: satNotes || undefined,
+        updated_by: updatedBy || undefined,
       });
     } else {
       onSave({
@@ -62,6 +67,7 @@ export function EditDayModal({
         is_no_gan: isNoGan,
         no_gan_reason: isNoGan ? noGanReason : undefined,
         notes: notes || undefined,
+        updated_by: updatedBy || undefined,
       });
     }
     onClose();
@@ -79,6 +85,10 @@ export function EditDayModal({
     const updated = [...satActivities];
     updated[index] = { ...updated[index], [field]: value };
     setSatActivities(updated);
+  };
+
+  const getSelectedPerson = (id: string): Person | undefined => {
+    return people.find((p) => p.id === id);
   };
 
   return (
@@ -152,16 +162,21 @@ export function EditDayModal({
             <>
               <div>
                 <label className="block text-sm font-medium mb-1">Drop-off</label>
-                <select
-                  value={dropoffPersonId}
-                  onChange={(e) => setDropoffPersonId(e.target.value)}
-                  className="w-full border rounded-lg p-2"
-                >
-                  <option value="">Select person...</option>
-                  {people.map((p) => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
+                <div className="flex items-center gap-2">
+                  {dropoffPersonId && getSelectedPerson(dropoffPersonId) && (
+                    <PersonAvatar person={getSelectedPerson(dropoffPersonId)!} size="md" showName={false} />
+                  )}
+                  <select
+                    value={dropoffPersonId}
+                    onChange={(e) => setDropoffPersonId(e.target.value)}
+                    className="flex-1 border rounded-lg p-2"
+                  >
+                    <option value="">Select person...</option>
+                    {people.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div>
@@ -177,16 +192,21 @@ export function EditDayModal({
 
               <div>
                 <label className="block text-sm font-medium mb-1">Pickup</label>
-                <select
-                  value={pickupPersonId}
-                  onChange={(e) => setPickupPersonId(e.target.value)}
-                  className="w-full border rounded-lg p-2"
-                >
-                  <option value="">Select person...</option>
-                  {people.map((p) => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
+                <div className="flex items-center gap-2">
+                  {pickupPersonId && getSelectedPerson(pickupPersonId) && (
+                    <PersonAvatar person={getSelectedPerson(pickupPersonId)!} size="md" showName={false} />
+                  )}
+                  <select
+                    value={pickupPersonId}
+                    onChange={(e) => setPickupPersonId(e.target.value)}
+                    className="flex-1 border rounded-lg p-2"
+                  >
+                    <option value="">Select person...</option>
+                    {people.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div>
@@ -220,16 +240,21 @@ export function EditDayModal({
 
               <div>
                 <label className="block text-sm font-medium mb-1">Bedtime</label>
-                <select
-                  value={bedtimePersonId}
-                  onChange={(e) => setBedtimePersonId(e.target.value)}
-                  className="w-full border rounded-lg p-2"
-                >
-                  <option value="">Select person...</option>
-                  {people.map((p) => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
+                <div className="flex items-center gap-2">
+                  {bedtimePersonId && getSelectedPerson(bedtimePersonId) && (
+                    <PersonAvatar person={getSelectedPerson(bedtimePersonId)!} size="md" showName={false} />
+                  )}
+                  <select
+                    value={bedtimePersonId}
+                    onChange={(e) => setBedtimePersonId(e.target.value)}
+                    className="flex-1 border rounded-lg p-2"
+                  >
+                    <option value="">Select person...</option>
+                    {people.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div className="border-t pt-4">
@@ -269,20 +294,35 @@ export function EditDayModal({
           )}
         </div>
 
-        <div className="flex gap-2 p-4 border-t sticky bottom-0 bg-white">
-          <button
-            onClick={onClose}
-            className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            className="flex-1 px-4 py-2 rounded-lg text-white"
-            style={{ backgroundColor: 'var(--color-primary)' }}
-          >
-            Save
-          </button>
+        <div className="p-4 border-t sticky bottom-0 bg-white space-y-3">
+          <div>
+            <label className="block text-sm font-medium mb-1">Who's updating this?</label>
+            <select
+              value={updatedBy}
+              onChange={(e) => setUpdatedBy(e.target.value)}
+              className="w-full border rounded-lg p-2"
+            >
+              <option value="">Select person (optional)...</option>
+              {people.map((p) => (
+                <option key={p.id} value={p.name}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              className="flex-1 px-4 py-2 rounded-lg text-white"
+              style={{ backgroundColor: 'var(--color-primary)' }}
+            >
+              Save
+            </button>
+          </div>
         </div>
       </div>
     </div>

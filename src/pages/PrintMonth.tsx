@@ -13,11 +13,13 @@ import {
 } from 'date-fns';
 import { useActivities } from '../hooks/useActivities';
 import { useMonthSchedule } from '../hooks/useSchedule';
+import { useTheme } from '../hooks/useTheme';
 import type { Activity, SaturdayActivity } from '../types';
 
 export function PrintMonth() {
   const { month } = useParams<{ month: string }>();
   const navigate = useNavigate();
+  const { currentTheme } = useTheme();
 
   const currentMonth = useMemo(() => {
     if (month) {
@@ -31,6 +33,8 @@ export function PrintMonth() {
 
   const { data: activities = [] } = useActivities();
   const { data: monthData } = useMonthSchedule(year, monthNum);
+
+  const themeEmoji = currentTheme?.emoji || '';
 
   const calendarDays = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
@@ -103,18 +107,23 @@ export function PrintMonth() {
         ← Back
       </button>
 
-      {/* Header */}
-      <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold">SKY'S MONTH</h1>
-        <p className="text-xl">{format(currentMonth, 'MMMM yyyy')}</p>
+      {/* Header with theme styling */}
+      <div
+        className="text-center mb-6 p-4 rounded-lg"
+        style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}
+      >
+        <h1 className="text-3xl font-bold">
+          {themeEmoji} SKY'S MONTH {themeEmoji}
+        </h1>
+        <p className="text-xl opacity-90">{format(currentMonth, 'MMMM yyyy')}</p>
       </div>
 
       {/* Calendar Grid */}
       <table className="w-full border-collapse border text-sm mb-6">
         <thead>
-          <tr className="bg-gray-100">
+          <tr style={{ backgroundColor: 'var(--color-secondary)' }}>
             {WEEKDAYS.map((day) => (
-              <th key={day} className="border p-2 text-center">
+              <th key={day} className="border p-2 text-center font-bold">
                 {day}
               </th>
             ))}
@@ -136,31 +145,42 @@ export function PrintMonth() {
                     key={dateStr}
                     className={`
                       border p-1 align-top h-20
-                      ${!isCurrentMonth ? 'bg-gray-100 text-gray-400' : ''}
-                      ${isSat ? 'bg-gray-50' : ''}
-                      ${isNoGan ? 'bg-gray-200' : ''}
+                      ${!isCurrentMonth ? 'text-gray-400' : ''}
                     `}
+                    style={{
+                      backgroundColor: !isCurrentMonth
+                        ? '#f9fafb'
+                        : isSat
+                        ? 'var(--color-saturday)'
+                        : isNoGan
+                        ? 'var(--color-no-gan)'
+                        : undefined,
+                    }}
                   >
-                    <div className="font-medium">{format(date, 'd')}</div>
+                    <div className="font-bold">{format(date, 'd')}</div>
 
                     {isNoGan && (
-                      <div className="text-xs font-bold">
+                      <div className="text-xs font-bold text-orange-600">
                         NO GAN
                         {schedule?.no_gan_reason && (
-                          <div className="font-normal">{schedule.no_gan_reason}</div>
+                          <div className="font-normal text-orange-500">{schedule.no_gan_reason}</div>
                         )}
                       </div>
                     )}
 
                     {schedule?.after_gan_activity_id && (
                       <div className="text-xs">
-                        {getActivityById(schedule.after_gan_activity_id)?.name}
+                        <span className="inline-block px-1 rounded" style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
+                          {getActivityById(schedule.after_gan_activity_id)?.name}
+                        </span>
                       </div>
                     )}
 
                     {isSat && satSchedule?.activities?.map((act: SaturdayActivity, idx: number) => (
                       <div key={idx} className="text-xs">
-                        {act.custom_name || getActivityById(act.activity_id)?.name}
+                        <span className="inline-block px-1 rounded" style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
+                          {act.custom_name || getActivityById(act.activity_id)?.name}
+                        </span>
                       </div>
                     ))}
                   </td>
@@ -172,26 +192,44 @@ export function PrintMonth() {
       </table>
 
       {/* Legend */}
-      <div className="flex gap-6 text-sm mb-6">
+      <div className="flex flex-wrap gap-6 text-sm mb-6">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-gray-200 border" />
+          <div className="w-4 h-4 rounded" style={{ backgroundColor: 'var(--color-no-gan)' }} />
           <span>No Gan</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded" style={{ backgroundColor: 'var(--color-saturday)' }} />
+          <span>Saturday</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded" style={{ backgroundColor: 'var(--color-primary)' }} />
+          <span>Activity</span>
         </div>
       </div>
 
       {/* Activity Details */}
       {monthActivities.length > 0 && (
         <div className="border-t pt-4">
-          <div className="font-bold mb-2">Activity Details:</div>
-          {monthActivities.map(({ activity }) => (
-            <div key={activity.id} className="text-sm mb-1">
-              • <strong>{activity.name}</strong>
-              {activity.is_recurring && activity.recurrence_day && (
-                <span> ({activity.recurrence_day}s {activity.default_time && `at ${activity.default_time}`})</span>
-              )}
-              {activity.address && ` — ${activity.address}`}
-            </div>
-          ))}
+          <div className="font-bold mb-3 text-lg">📍 Activity Details:</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {monthActivities.map(({ activity }) => (
+              <div
+                key={activity.id}
+                className="p-2 rounded border-l-4"
+                style={{ borderColor: 'var(--color-primary)', backgroundColor: 'var(--color-background)' }}
+              >
+                <div className="font-bold">{activity.name}</div>
+                {activity.is_recurring && activity.recurrence_day && (
+                  <div className="text-sm text-gray-600">
+                    {activity.recurrence_day}s {activity.default_time && `at ${activity.default_time}`}
+                  </div>
+                )}
+                {activity.address && (
+                  <div className="text-sm">📍 {activity.address}</div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

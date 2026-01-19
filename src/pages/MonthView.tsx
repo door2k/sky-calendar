@@ -16,7 +16,9 @@ import {
 } from 'date-fns';
 import { ThemePicker } from '../components/ThemePicker';
 import { ActivityPopup } from '../components/ActivityPopup';
+import { AIAssistant } from '../components/AIAssistant';
 import { useTheme } from '../hooks/useTheme';
+import { usePeople } from '../hooks/usePeople';
 import { useActivities } from '../hooks/useActivities';
 import { useMonthSchedule } from '../hooks/useSchedule';
 import type { Activity, DaySchedule, SaturdaySchedule } from '../types';
@@ -39,10 +41,16 @@ export function MonthView() {
   const monthNum = currentMonth.getMonth() + 1;
 
   const { currentTheme, selectTheme } = useTheme();
+  const { data: people = [] } = usePeople();
   const { data: activities = [] } = useActivities();
   const { data: monthData } = useMonthSchedule(year, monthNum);
 
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
+
+  // Get the current week start (for AI Assistant context)
+  const currentWeekStart = useMemo(() => {
+    return startOfWeek(new Date(), { weekStartsOn: 0 });
+  }, []);
 
   const calendarDays = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
@@ -276,7 +284,7 @@ export function MonthView() {
         {/* Footer Navigation */}
         <div className="flex items-center justify-center gap-4 mt-6 no-print">
           <Link
-            to={`/week/${format(startOfWeek(new Date(), { weekStartsOn: 0 }), 'yyyy-MM-dd')}`}
+            to="/week"
             className="px-4 py-2 rounded-lg border hover:bg-gray-50"
           >
             Week View
@@ -297,6 +305,14 @@ export function MonthView() {
           onClose={() => setSelectedActivity(null)}
         />
       )}
+
+      {/* AI Assistant */}
+      <AIAssistant
+        people={people}
+        activities={activities}
+        currentWeekStart={currentWeekStart}
+        schedules={monthData?.daySchedules || []}
+      />
     </div>
   );
 }
