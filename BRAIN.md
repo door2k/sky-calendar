@@ -191,7 +191,15 @@ Actions are sorted before execution to handle dependencies:
 - [ ] No Google Calendar sync yet
 
 ### Feature Requests (Backlog)
+- [ ] Add images/photos for people (not just names) - needs thoughtful design, e.g., Gili & Yossi are two people so need two images displayed together
+- [ ] URL should not change when switching weeks (week as URL parameter is acceptable)
 - [ ] AI assistant available in monthly view (currently only in weekly view)
+- [ ] Combined print view (weekly + monthly calendar on same page)
+- [ ] Voice input for AI assistant (speech-to-text)
+- [ ] Highlight today's card in weekly view (make current day more visually prominent)
+- [ ] "Go to this week" button (quick navigation to current week)
+- [ ] Redesign print views to be more visually pleasing, fun, and creative
+- [ ] Track who created each event (simple creator field, no OAuth needed - just to know who to ask about it)
 
 ## Development Notes
 
