@@ -79,6 +79,7 @@ export function EditDayModal({
         saveData.family_dinner_person_id = familyDinnerPersonId || undefined;
         saveData.family_dinner_time = familyDinnerTime || undefined;
       }
+      console.log('[EditDayModal] Saving Saturday-style:', { isLastFri, isSat, familyDinnerPersonId, familyDinnerTime, saveData });
       onSave(saveData);
     } else {
       const saveData: Partial<DaySchedule> & { date: string } = {
@@ -207,7 +208,10 @@ export function EditDayModal({
                         )}
                         <select
                           value={familyDinnerPersonId}
-                          onChange={(e) => setFamilyDinnerPersonId(e.target.value)}
+                          onChange={(e) => {
+                            console.log('[EditDayModal] Last Friday family dinner person changed:', e.target.value);
+                            setFamilyDinnerPersonId(e.target.value);
+                          }}
                           className="flex-1 border rounded-lg p-2"
                         >
                           <option value="">Select person...</option>

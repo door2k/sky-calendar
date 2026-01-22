@@ -26,7 +26,14 @@ A website to manage Sky's (a child) weekly and monthly schedule in Israel. Shows
 - **Supabase Dashboard:** https://supabase.com/dashboard/project/thzesmfiecccpvuzuscd
 - **Supabase SQL Editor:** https://supabase.com/dashboard/project/thzesmfiecccpvuzuscd/sql/new
 
-**Note:** Claude can work with Supabase directly via browser automation (when connected) - don't ask the user to run SQL manually.
+## Claude Automation Expectations
+
+**IMPORTANT:** Claude should handle infrastructure tasks autonomously via browser automation:
+- **Supabase:** Connect directly to run SQL migrations, check data, etc. Don't ask user to run SQL manually.
+- **Vercel:** Connect directly to trigger deployments, check logs, etc. Don't ask user to deploy manually.
+- **User login:** User will handle OAuth/login flows when needed, then Claude continues autonomously.
+
+The user expects Claude to be proactive about connecting to these services rather than asking the user to do it.
 
 ## Environment Variables (Vercel)
 
@@ -257,7 +264,7 @@ npx vercel logs sky-calendar.vercel.app --since 5m
   - Added to print views
   - AI assistant can set family dinner via update_day and update_saturday actions
 - **Updated Feature Backlog**: Marked completed features (images, URL navigation, combined print, today highlight, this week button, creator tracking)
-- **Database migration required:**
+- **Database migration COMPLETED** (ran via Supabase SQL Editor):
   ```sql
   ALTER TABLE day_schedules
   ADD COLUMN family_dinner_person_id uuid REFERENCES people(id),
@@ -267,6 +274,7 @@ npx vercel logs sky-calendar.vercel.app --since 5m
   ADD COLUMN family_dinner_person_id uuid REFERENCES people(id),
   ADD COLUMN family_dinner_time text DEFAULT '16:00';
   ```
+- **Added Claude Automation Expectations** section to BRAIN.md
 
 ### 2026-01-15
 - **Fixed Saturday activity bug**: Root cause was missing `activities` JSONB column in `saturday_schedules` table
