@@ -287,11 +287,11 @@ export function PrintCombined() {
                       border p-1 align-top h-12
                       ${!isCurrentMonth ? 'bg-gray-100 text-gray-400' : ''}
                       ${isSat ? 'bg-gray-50' : ''}
-                      ${isNoGan ? 'bg-orange-50' : ''}
+                      ${isNoGan ? 'bg-orange-200 border-orange-400 border-2' : ''}
                     `}
                   >
                     <div className="font-medium text-xs">{format(date, 'd')}</div>
-                    {isNoGan && <div className="text-orange-600 font-bold" style={{ fontSize: '7px' }}>NO GAN</div>}
+                    {isNoGan && <div className="text-orange-700 font-bold text-xs">NO GAN</div>}
                     {schedule?.after_gan_activity_id && (
                       <div className="truncate" style={{ fontSize: '7px' }}>
                         {getActivity(schedule.after_gan_activity_id)?.name}
