@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   startOfMonth,
@@ -11,9 +11,11 @@ import {
   format,
   isSameMonth,
   isSaturday,
+  isSameDay,
   parseISO,
   getDay,
 } from 'date-fns';
+import { isLastFridayOfMonth } from '../lib/dateUtils';
 import { ThemePicker } from '../components/ThemePicker';
 import { ActivityPopup } from '../components/ActivityPopup';
 import { AIAssistant } from '../components/AIAssistant';
@@ -46,11 +48,20 @@ export function MonthView() {
   const { data: monthData } = useMonthSchedule(year, monthNum);
 
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
+  const todayRef = useRef<HTMLDivElement>(null);
+  const today = useMemo(() => new Date(), []);
 
   // Get the current week start (for AI Assistant context)
   const currentWeekStart = useMemo(() => {
     return startOfWeek(new Date(), { weekStartsOn: 0 });
   }, []);
+
+  // Scroll to today on mount
+  useEffect(() => {
+    if (todayRef.current) {
+      todayRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [monthData]);
 
   const calendarDays = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
@@ -159,45 +170,70 @@ export function MonthView() {
               const dateStr = format(date, 'yyyy-MM-dd');
               const isCurrentMonth = isSameMonth(date, currentMonth);
               const isSat = isSaturday(date);
+              const isLastFri = isLastFridayOfMonth(date);
+              const isSaturdayLike = isSat || isLastFri;
               const schedule = getScheduleForDate(date);
               const satSchedule = getSaturdayScheduleForDate(date);
-              const isNoGan = schedule?.is_no_gan;
+              const isNoGan = schedule?.is_no_gan || isLastFri;
+              const isToday = isSameDay(date, today);
 
               return (
                 <div
                   key={dateStr}
+                  ref={isToday ? todayRef : undefined}
                   onClick={() => handleDayClick(date)}
                   className={`
                     min-h-[80px] p-2 border-t border-l cursor-pointer
                     hover:bg-gray-50 transition-colors
                     ${!isCurrentMonth ? 'bg-gray-50 text-gray-400' : ''}
-                    ${isSat ? 'bg-opacity-50' : ''}
-                    ${isNoGan ? 'bg-opacity-50' : ''}
+                    ${isSaturdayLike ? 'bg-opacity-50' : ''}
+                    ${isNoGan && !isLastFri ? 'bg-opacity-50' : ''}
+                    ${isToday ? 'ring-4 ring-yellow-400 ring-inset z-10' : ''}
                   `}
                   style={{
-                    backgroundColor: isSat
+                    backgroundColor: isSaturdayLike
                       ? 'var(--color-saturday)'
                       : isNoGan
                       ? 'var(--color-no-gan)'
                       : undefined,
                   }}
                 >
-                  <div className={`text-sm font-medium ${isNoGan ? 'text-orange-700' : ''}`}>
+                  <div className={`text-sm font-medium ${isNoGan ? 'text-orange-700' : ''} ${isToday ? 'bg-yellow-400 rounded-full w-6 h-6 flex items-center justify-center' : ''}`}>
                     {format(date, 'd')}
                   </div>
 
-                  {isNoGan && (
+                  {/* Last Friday badge */}
+                  {isLastFri && (
                     <div className="text-xs font-bold text-orange-600 mt-1">
                       NO GAN
+                      <div className="font-normal">Last Friday</div>
+                    </div>
+                  )}
+
+                  {/* No Gan / Holiday display */}
+                  {isNoGan && !isLastFri && (
+                    <div className="text-xs font-bold text-orange-600 mt-1">
+                      {schedule?.no_gan_reason === 'Holiday' ? (
+                        <>🎉 HOLIDAY</>
+                      ) : (
+                        <>NO GAN</>
+                      )}
                       {schedule?.no_gan_reason && (
                         <div className="font-normal">{schedule.no_gan_reason}</div>
                       )}
                     </div>
                   )}
 
+                  {/* Gan Activity (only show on weekdays that have gan) */}
+                  {!isSaturdayLike && !isNoGan && schedule?.gan_activity && (
+                    <div className="text-xs mt-1 truncate">
+                      <span className="text-green-700">🏫 {schedule.gan_activity}</span>
+                    </div>
+                  )}
+
                   {/* Activities */}
-                  <div className="mt-1 space-y-1">
-                    {/* Explicitly assigned activity */}
+                  <div className="mt-1 space-y-0.5">
+                    {/* Explicitly assigned after-gan activity */}
                     {schedule?.after_gan_activity_id && (
                       <div
                         className="text-xs truncate"
@@ -208,13 +244,13 @@ export function MonthView() {
                         }}
                       >
                         <span className="text-blue-600 hover:underline cursor-pointer">
-                          ● {getActivityById(schedule.after_gan_activity_id)?.name}
+                          🎯 {getActivityById(schedule.after_gan_activity_id)?.name}
                         </span>
                       </div>
                     )}
 
                     {/* Recurring activities for this day of week (if not already shown via explicit assignment) */}
-                    {!isSat && getRecurringActivitiesForDay(date)
+                    {!isSaturdayLike && getRecurringActivitiesForDay(date)
                       .filter((a) => a.id !== schedule?.after_gan_activity_id)
                       .map((activity) => (
                         <div
@@ -231,7 +267,8 @@ export function MonthView() {
                         </div>
                       ))}
 
-                    {isSat && satSchedule?.activities?.map((act, idx) => {
+                    {/* Saturday/Last Friday activities */}
+                    {isSaturdayLike && satSchedule?.activities?.map((act, idx) => {
                       const activity = getActivityById(act.activity_id);
                       return (
                         <div
@@ -243,7 +280,7 @@ export function MonthView() {
                           }}
                         >
                           <span className="text-blue-600 hover:underline cursor-pointer">
-                            ● {act.custom_name || activity?.name}
+                            🎯 {act.custom_name || activity?.name}
                           </span>
                         </div>
                       );
@@ -256,28 +293,36 @@ export function MonthView() {
         </div>
 
         {/* Legend */}
-        <div className="flex flex-wrap items-center gap-6 mt-4 text-sm text-gray-600">
-          <div className="flex items-center gap-2">
-            <span className="text-blue-600">●</span>
-            <span>Scheduled Activity</span>
+        <div className="flex flex-wrap items-center gap-4 mt-4 text-sm text-gray-600">
+          <div className="flex items-center gap-1">
+            <span>🏫</span>
+            <span>Gan Activity</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span>🎯</span>
+            <span>After-Gan Activity</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-purple-600">○</span>
-            <span>Recurring Activity</span>
+            <span>Recurring</span>
           </div>
           <div className="flex items-center gap-2">
             <div
               className="w-4 h-4 rounded"
               style={{ backgroundColor: 'var(--color-no-gan)' }}
             />
-            <span>No Gan</span>
+            <span>No Gan / Holiday</span>
           </div>
           <div className="flex items-center gap-2">
             <div
               className="w-4 h-4 rounded"
               style={{ backgroundColor: 'var(--color-saturday)' }}
             />
-            <span>Saturday</span>
+            <span>Saturday / Last Friday</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded ring-2 ring-yellow-400" />
+            <span>Today</span>
           </div>
         </div>
 

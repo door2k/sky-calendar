@@ -14,7 +14,8 @@ import {
 import { usePeople } from '../hooks/usePeople';
 import { useActivities } from '../hooks/useActivities';
 import { useWeekSchedule, useMonthSchedule } from '../hooks/useSchedule';
-import type { Activity, SaturdayActivity } from '../types';
+import { PersonAvatar } from '../components/PersonAvatar';
+import type { Activity, SaturdayActivity, Person } from '../types';
 
 export function PrintCombined() {
   const { date } = useParams<{ date: string }>();
@@ -55,9 +56,15 @@ export function PrintCombined() {
     return days;
   }, [currentMonth]);
 
-  const getPersonName = (id?: string) => {
-    if (!id) return '—';
-    return people.find((p) => p.id === id)?.name || '—';
+  const getPerson = (id?: string): Person | null => {
+    if (!id) return null;
+    return people.find((p) => p.id === id) || null;
+  };
+
+  const renderPerson = (id?: string) => {
+    const person = getPerson(id);
+    if (!person) return <span>—</span>;
+    return <PersonAvatar person={person} size="sm" printSize />;
   };
 
   const getActivity = (id?: string): Activity | undefined => {
@@ -149,9 +156,11 @@ export function PrintCombined() {
             {weekData?.days.slice(0, 6).map((day, idx) => (
               <td
                 key={idx}
-                className={`border p-1 text-center text-xs ${day?.is_no_gan ? 'line-through text-gray-400' : ''}`}
+                className={`border p-1 text-xs ${day?.is_no_gan ? 'line-through text-gray-400' : ''}`}
               >
-                {getPersonName(day?.dropoff_person_id)}
+                <div className="flex justify-center">
+                  {renderPerson(day?.dropoff_person_id)}
+                </div>
               </td>
             ))}
           </tr>
@@ -175,9 +184,11 @@ export function PrintCombined() {
             {weekData?.days.slice(0, 6).map((day, idx) => (
               <td
                 key={idx}
-                className={`border p-1 text-center text-xs ${day?.is_no_gan ? 'line-through text-gray-400' : ''}`}
+                className={`border p-1 text-xs ${day?.is_no_gan ? 'line-through text-gray-400' : ''}`}
               >
-                {getPersonName(day?.pickup_person_id)}
+                <div className="flex justify-center">
+                  {renderPerson(day?.pickup_person_id)}
+                </div>
               </td>
             ))}
           </tr>
@@ -195,8 +206,29 @@ export function PrintCombined() {
           <tr>
             <td className="border p-1 font-medium text-xs">Bedtime</td>
             {weekData?.days.slice(0, 6).map((day, idx) => (
-              <td key={idx} className="border p-1 text-center text-xs">
-                {getPersonName(day?.bedtime_person_id)}
+              <td key={idx} className="border p-1 text-xs">
+                <div className="flex justify-center">
+                  {renderPerson(day?.bedtime_person_id)}
+                </div>
+              </td>
+            ))}
+          </tr>
+          <tr className="bg-amber-50">
+            <td className="border p-1 font-medium text-xs">Dinner</td>
+            {weekData?.days.slice(0, 6).map((day, idx) => (
+              <td key={idx} className="border p-1 text-xs text-center">
+                {idx === 5 && day?.family_dinner_person_id ? (
+                  <div className="flex flex-col items-center">
+                    {renderPerson(day.family_dinner_person_id)}
+                    {day.family_dinner_time && (
+                      <div style={{ fontSize: '8px' }} className="text-gray-500">{day.family_dinner_time}</div>
+                    )}
+                  </div>
+                ) : idx === 5 ? (
+                  <span className="text-gray-400">—</span>
+                ) : (
+                  ''
+                )}
               </td>
             ))}
           </tr>

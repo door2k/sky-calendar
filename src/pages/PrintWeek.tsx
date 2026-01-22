@@ -44,7 +44,7 @@ export function PrintWeek() {
   const renderPerson = (id?: string) => {
     const person = getPerson(id);
     if (!person) return <span>—</span>;
-    return <PersonAvatar person={person} size="sm" />;
+    return <PersonAvatar person={person} size="sm" printSize />;
   };
 
   // Auto-print on load
@@ -192,6 +192,25 @@ export function PrintWeek() {
                 <div className="flex justify-center">
                   {renderPerson(day?.bedtime_person_id)}
                 </div>
+              </td>
+            ))}
+          </tr>
+          <tr style={{ backgroundColor: 'var(--color-background)' }}>
+            <td className="border p-2 font-medium">🍽️ Family Dinner</td>
+            {weekData?.days.slice(0, 6).map((day, idx) => (
+              <td key={idx} className="border p-2 text-center">
+                {idx === 5 && day?.family_dinner_person_id ? (
+                  <div className="flex flex-col items-center">
+                    {renderPerson(day.family_dinner_person_id)}
+                    {day.family_dinner_time && (
+                      <div className="text-xs text-gray-500 mt-1">{day.family_dinner_time}</div>
+                    )}
+                  </div>
+                ) : idx === 5 ? (
+                  <span className="text-gray-400">—</span>
+                ) : (
+                  ''
+                )}
               </td>
             ))}
           </tr>

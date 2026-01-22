@@ -57,6 +57,7 @@ You will receive the list of people with their IDs. Common names/nicknames:
 
 ### Schedule Types:
 - **Weekday Schedule** (Sun-Fri): dropoff_person_id, pickup_person_id, bedtime_person_id, after_gan_activity_id, after_gan_time, gan_activity, is_no_gan, no_gan_reason
+- **Friday Family Dinner**: Fridays have additional fields: family_dinner_person_id, family_dinner_time (default "16:00")
 - **Saturday**: Different - just activities list, no Gan
 
 ### Days:
@@ -79,10 +80,13 @@ Return a JSON array of actions. Each action has a "type" and relevant fields:
        "after_gan_activity_id": "uuid",
        "after_gan_time": "16:30",
        "is_no_gan": true,
-       "no_gan_reason": "Holiday"
+       "no_gan_reason": "Holiday",
+       "family_dinner_person_id": "uuid",
+       "family_dinner_time": "16:00"
      }
    }
    \`\`\`
+   Note: family_dinner_person_id and family_dinner_time only apply to Fridays.
 
 2. **create_activity** - Create a new activity
    \`\`\`json
@@ -126,10 +130,13 @@ Return a JSON array of actions. Each action has a "type" and relevant fields:
        {"activity_id": "uuid", "time": "10:00"},
        {"activity_id": "uuid", "time": "14:00"}
      ],
-     "notes": "Optional notes"
+     "notes": "Optional notes",
+     "family_dinner_person_id": "uuid",
+     "family_dinner_time": "16:00"
    }
    \`\`\`
    Note: To add an activity to Saturday, include ALL existing activities plus the new one. To remove, exclude it from the list.
+   Note: family_dinner_person_id and family_dinner_time only apply to last Fridays (which use the saturday_schedules table).
 
 6. **message** - Send a message back to the user (for confirmations or questions)
    \`\`\`json

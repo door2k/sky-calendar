@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { format, isSaturday } from 'date-fns';
+import { format, isSaturday, isFriday } from 'date-fns';
+import { isLastFridayOfMonth } from '../lib/dateUtils';
 import type { DaySchedule, SaturdaySchedule, Person, Activity } from '../types';
 import { PersonAvatar } from './PersonAvatar';
 
@@ -7,6 +8,7 @@ interface EditDayModalProps {
   date: Date;
   schedule: DaySchedule | null;
   saturdaySchedule: SaturdaySchedule | null;
+  lastFridaySchedule?: SaturdaySchedule | null;
   people: Person[];
   activities: Activity[];
   onSave: (data: Partial<DaySchedule> | Partial<SaturdaySchedule>) => void;
@@ -20,6 +22,7 @@ export function EditDayModal({
   date,
   schedule,
   saturdaySchedule,
+  lastFridaySchedule,
   people,
   activities,
   onSave,
@@ -27,7 +30,13 @@ export function EditDayModal({
   onAddActivity,
 }: EditDayModalProps) {
   const isSat = isSaturday(date);
+  const isFri = isFriday(date);
+  const isLastFri = isLastFridayOfMonth(date);
+  const useSaturdayStyle = isSat || isLastFri;
   const dateStr = format(date, 'yyyy-MM-dd');
+
+  // Use appropriate schedule for Saturday-style days
+  const satStyleSchedule = isSat ? saturdaySchedule : lastFridaySchedule;
 
   // Weekday state
   const [dropoffPersonId, setDropoffPersonId] = useState(schedule?.dropoff_person_id || '');
@@ -40,23 +49,39 @@ export function EditDayModal({
   const [noGanReason, setNoGanReason] = useState(schedule?.no_gan_reason || '');
   const [notes, setNotes] = useState(schedule?.notes || '');
 
-  // Saturday state
-  const [satActivities, setSatActivities] = useState(saturdaySchedule?.activities || []);
-  const [satNotes, setSatNotes] = useState(saturdaySchedule?.notes || '');
+  // Saturday-style state (for Saturdays and last Fridays)
+  const [satActivities, setSatActivities] = useState(satStyleSchedule?.activities || []);
+  const [satNotes, setSatNotes] = useState(satStyleSchedule?.notes || '');
+
+  // Family dinner state (for Fridays)
+  // For regular Fridays, use schedule; for last Fridays, use satStyleSchedule
+  const [familyDinnerPersonId, setFamilyDinnerPersonId] = useState(
+    isLastFri ? (satStyleSchedule?.family_dinner_person_id || '') : (schedule?.family_dinner_person_id || '')
+  );
+  const [familyDinnerTime, setFamilyDinnerTime] = useState(
+    isLastFri ? (satStyleSchedule?.family_dinner_time || '16:00') : (schedule?.family_dinner_time || '16:00')
+  );
 
   // Creator tracking state
   const [updatedBy, setUpdatedBy] = useState('');
 
   const handleSave = () => {
-    if (isSat) {
-      onSave({
+    if (useSaturdayStyle) {
+      // For last Fridays (not actual Saturdays), include family dinner
+      const saveData: Partial<SaturdaySchedule> & { date: string } = {
         date: dateStr,
         activities: satActivities,
         notes: satNotes || undefined,
         updated_by: updatedBy || undefined,
-      });
+      };
+      // Add family dinner for last Fridays (not Saturdays)
+      if (isLastFri && !isSat) {
+        saveData.family_dinner_person_id = familyDinnerPersonId || undefined;
+        saveData.family_dinner_time = familyDinnerTime || undefined;
+      }
+      onSave(saveData);
     } else {
-      onSave({
+      const saveData: Partial<DaySchedule> & { date: string } = {
         date: dateStr,
         dropoff_person_id: dropoffPersonId || undefined,
         gan_activity: ganActivity || undefined,
@@ -68,7 +93,13 @@ export function EditDayModal({
         no_gan_reason: isNoGan ? noGanReason : undefined,
         notes: notes || undefined,
         updated_by: updatedBy || undefined,
-      });
+      };
+      // Add family dinner for regular Fridays
+      if (isFri) {
+        saveData.family_dinner_person_id = familyDinnerPersonId || undefined;
+        saveData.family_dinner_time = familyDinnerTime || undefined;
+      }
+      onSave(saveData);
     }
     onClose();
   };
@@ -107,8 +138,13 @@ export function EditDayModal({
         </div>
 
         <div className="p-4 space-y-4">
-          {isSat ? (
+          {useSaturdayStyle ? (
             <>
+              {isLastFri && (
+                <div className="bg-orange-100 text-orange-800 px-3 py-2 rounded-lg text-sm mb-2">
+                  Last Friday of the month - No Gan
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium mb-2">Activities</label>
                 <div className="space-y-2">
@@ -157,6 +193,42 @@ export function EditDayModal({
                   placeholder="Any notes for this day..."
                 />
               </div>
+
+              {/* Family Dinner for last Fridays */}
+              {isLastFri && !isSat && (
+                <div className="border-t pt-4">
+                  <label className="block text-sm font-medium mb-2">🍽️ Family Dinner</label>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Who's hosting?</label>
+                      <div className="flex items-center gap-2">
+                        {familyDinnerPersonId && getSelectedPerson(familyDinnerPersonId) && (
+                          <PersonAvatar person={getSelectedPerson(familyDinnerPersonId)!} size="lg" showName={false} />
+                        )}
+                        <select
+                          value={familyDinnerPersonId}
+                          onChange={(e) => setFamilyDinnerPersonId(e.target.value)}
+                          className="flex-1 border rounded-lg p-2"
+                        >
+                          <option value="">Select person...</option>
+                          {people.map((p) => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Dinner time</label>
+                      <input
+                        type="time"
+                        value={familyDinnerTime}
+                        onChange={(e) => setFamilyDinnerTime(e.target.value)}
+                        className="border rounded-lg p-2"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </>
           ) : (
             <>
@@ -290,6 +362,42 @@ export function EditDayModal({
                   placeholder="Any notes for this day..."
                 />
               </div>
+
+              {/* Family Dinner for regular Fridays */}
+              {isFri && !isLastFri && (
+                <div className="border-t pt-4">
+                  <label className="block text-sm font-medium mb-2">🍽️ Family Dinner</label>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Who's hosting?</label>
+                      <div className="flex items-center gap-2">
+                        {familyDinnerPersonId && getSelectedPerson(familyDinnerPersonId) && (
+                          <PersonAvatar person={getSelectedPerson(familyDinnerPersonId)!} size="lg" showName={false} />
+                        )}
+                        <select
+                          value={familyDinnerPersonId}
+                          onChange={(e) => setFamilyDinnerPersonId(e.target.value)}
+                          className="flex-1 border rounded-lg p-2"
+                        >
+                          <option value="">Select person...</option>
+                          {people.map((p) => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Dinner time</label>
+                      <input
+                        type="time"
+                        value={familyDinnerTime}
+                        onChange={(e) => setFamilyDinnerTime(e.target.value)}
+                        className="border rounded-lg p-2"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>

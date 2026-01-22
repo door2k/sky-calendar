@@ -6,6 +6,7 @@ import { MonthView } from './pages/MonthView';
 import { PrintWeek } from './pages/PrintWeek';
 import { PrintMonth } from './pages/PrintMonth';
 import { PrintCombined } from './pages/PrintCombined';
+import { PeopleEditor } from './pages/PeopleEditor';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -29,6 +30,7 @@ function App() {
           <Route path="/print/week/:date" element={<PrintWeek />} />
           <Route path="/print/month/:month" element={<PrintMonth />} />
           <Route path="/print/combined/:date" element={<PrintCombined />} />
+          <Route path="/editor/people" element={<PeopleEditor />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

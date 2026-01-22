@@ -1,6 +1,6 @@
 # Sky's Schedule Calendar - Project Brain
 
-> **Last Updated:** 2026-01-15
+> **Last Updated:** 2026-01-22
 > **Status:** Active Development
 > **Live URL:** https://sky-calendar.vercel.app
 
@@ -26,6 +26,8 @@ A website to manage Sky's (a child) weekly and monthly schedule in Israel. Shows
 - **Supabase Dashboard:** https://supabase.com/dashboard/project/thzesmfiecccpvuzuscd
 - **Supabase SQL Editor:** https://supabase.com/dashboard/project/thzesmfiecccpvuzuscd/sql/new
 
+**Note:** Claude can work with Supabase directly via browser automation (when connected) - don't ask the user to run SQL manually.
+
 ## Environment Variables (Vercel)
 
 - `VITE_SUPABASE_URL` - Supabase project URL
@@ -45,9 +47,11 @@ A website to manage Sky's (a child) weekly and monthly schedule in Israel. Shows
 
 3. **day_schedules** - Weekday schedules (Sun-Fri ONLY)
    - id, date, dropoff_person_id, pickup_person_id, bedtime_person_id, after_gan_activity_id, after_gan_time, gan_activity, is_no_gan, no_gan_reason, notes, created_at, updated_at
+   - **Friday-specific:** family_dinner_person_id, family_dinner_time (default "16:00")
 
-4. **saturday_schedules** - Saturday schedules (DIFFERENT structure - no Gan on Saturdays)
+4. **saturday_schedules** - Saturday schedules AND last Friday of month (DIFFERENT structure - no Gan)
    - id, date, **activities** (JSONB array of `{activity_id, time}`), notes, created_at, updated_at
+   - **Last Friday-specific:** family_dinner_person_id, family_dinner_time (default "16:00")
    - **CRITICAL:** Saturday uses `activities` JSONB array, NOT `after_gan_activity_id`
 
 5. **settings** - App settings
@@ -77,6 +81,7 @@ This caused bugs - document it clearly:
 - [x] Add activity modal
 - [x] Print views (weekly and monthly)
 - [x] No-Gan day marking with reasons
+- [x] Friday Family Dinner - all Fridays show family dinner slot with large avatar and time
 
 ### AI Assistant (Claude-Powered)
 - [x] Natural language schedule updates
@@ -191,15 +196,15 @@ Actions are sorted before execution to handle dependencies:
 - [ ] No Google Calendar sync yet
 
 ### Feature Requests (Backlog)
-- [ ] Add images/photos for people (not just names) - needs thoughtful design, e.g., Gili & Yossi are two people so need two images displayed together
-- [ ] URL should not change when switching weeks (week as URL parameter is acceptable)
+- [x] Add images/photos for people - `PersonAvatar.tsx` + `PeopleEditor.tsx`
+- [x] URL should not change when switching weeks - State-based navigation in `WeekView.tsx`
 - [ ] AI assistant available in monthly view (currently only in weekly view)
-- [ ] Combined print view (weekly + monthly calendar on same page)
+- [x] Combined print view (weekly + monthly calendar on same page) - `PrintCombined.tsx`
 - [ ] Voice input for AI assistant (speech-to-text)
-- [ ] Highlight today's card in weekly view (make current day more visually prominent)
-- [ ] "Go to this week" button (quick navigation to current week)
+- [x] Highlight today's card in weekly view - `isToday` prop in `DayCard.tsx`
+- [x] "Go to this week" button - "This Week" button in `WeekView.tsx`
 - [ ] Redesign print views to be more visually pleasing, fun, and creative
-- [ ] Track who created each event (simple creator field, no OAuth needed - just to know who to ask about it)
+- [x] Track who created each event - Fields exist (`created_by`, `updated_by`), UI partial
 
 ## Development Notes
 
@@ -244,7 +249,26 @@ npx vercel logs sky-calendar.vercel.app --since 5m
 
 ## Changelog
 
-### 2026-01-15 (Latest Session)
+### 2026-01-22 (Latest Session)
+- **Added Friday Family Dinner feature**: All Fridays now have a family dinner slot
+  - Shows hosting person with large (2x) avatar
+  - Editable time (default 4pm)
+  - Works for both regular Fridays (day_schedules) and last Fridays (saturday_schedules)
+  - Added to print views
+  - AI assistant can set family dinner via update_day and update_saturday actions
+- **Updated Feature Backlog**: Marked completed features (images, URL navigation, combined print, today highlight, this week button, creator tracking)
+- **Database migration required:**
+  ```sql
+  ALTER TABLE day_schedules
+  ADD COLUMN family_dinner_person_id uuid REFERENCES people(id),
+  ADD COLUMN family_dinner_time text DEFAULT '16:00';
+
+  ALTER TABLE saturday_schedules
+  ADD COLUMN family_dinner_person_id uuid REFERENCES people(id),
+  ADD COLUMN family_dinner_time text DEFAULT '16:00';
+  ```
+
+### 2026-01-15
 - **Fixed Saturday activity bug**: Root cause was missing `activities` JSONB column in `saturday_schedules` table
 - **Added `activities` column**: `ALTER TABLE saturday_schedules ADD COLUMN activities jsonb DEFAULT '[]'::jsonb;`
 - **Fixed action ordering**: Actions now sorted so `create_activity` runs before `assign_activity`/`update_saturday`

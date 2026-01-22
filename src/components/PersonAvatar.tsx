@@ -2,16 +2,29 @@ import type { Person } from '../types';
 
 interface PersonAvatarProps {
   person: Person;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   showName?: boolean;
+  printSize?: boolean; // 50% larger for print views
 }
 
-export function PersonAvatar({ person, size = 'sm', showName = true }: PersonAvatarProps) {
-  const sizeClasses = {
+export function PersonAvatar({ person, size = 'sm', showName = true, printSize = false }: PersonAvatarProps) {
+  // Regular sizes
+  const regularSizeClasses = {
     sm: 'w-6 h-6 text-xs',
     md: 'w-8 h-8 text-sm',
     lg: 'w-10 h-10 text-base',
+    xl: 'w-12 h-12 text-lg', // 2x the sm size for family dinner
   };
+
+  // Print sizes (50% larger)
+  const printSizeClasses = {
+    sm: 'w-9 h-9 text-sm',
+    md: 'w-12 h-12 text-base',
+    lg: 'w-14 h-14 text-lg',
+    xl: 'w-16 h-16 text-xl', // 2x for family dinner in print
+  };
+
+  const sizeClasses = printSize ? printSizeClasses : regularSizeClasses;
 
   const hasAvatar = person.avatar_url;
   const hasSecondAvatar = person.avatar_url_2;

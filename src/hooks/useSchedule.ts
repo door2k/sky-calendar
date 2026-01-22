@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { startOfWeek, addDays, format } from 'date-fns';
 import { supabase } from '../lib/supabase';
+import { isLastFridayOfMonth } from '../lib/dateUtils';
 import type { DaySchedule, SaturdaySchedule } from '../types';
 
 export function useWeekSchedule(weekStartDate: Date) {
@@ -9,9 +10,12 @@ export function useWeekSchedule(weekStartDate: Date) {
   return useQuery({
     queryKey: ['schedule', 'week', format(startDate, 'yyyy-MM-dd')],
     queryFn: async () => {
-      const dates = Array.from({ length: 7 }, (_, i) =>
-        format(addDays(startDate, i), 'yyyy-MM-dd')
-      );
+      const weekDates = Array.from({ length: 7 }, (_, i) => addDays(startDate, i));
+      const dates = weekDates.map((d) => format(d, 'yyyy-MM-dd'));
+
+      // Check if Friday (index 5) is the last Friday of the month
+      const fridayDate = weekDates[5];
+      const fridayIsLastOfMonth = isLastFridayOfMonth(fridayDate);
 
       // Fetch weekday schedules (Sun-Fri)
       const { data: weekdayData, error: weekdayError } = await supabase
@@ -21,12 +25,16 @@ export function useWeekSchedule(weekStartDate: Date) {
 
       if (weekdayError) throw weekdayError;
 
-      // Fetch Saturday schedule
-      const { data: saturdayData, error: saturdayError } = await supabase
+      // Fetch Saturday-style schedules (Saturday + last Friday if applicable)
+      const saturdayDates = [dates[6]]; // Saturday
+      if (fridayIsLastOfMonth) {
+        saturdayDates.push(dates[5]); // Last Friday
+      }
+
+      const { data: saturdayStyleData, error: saturdayError } = await supabase
         .from('saturday_schedules')
         .select('*')
-        .eq('date', dates[6])
-        .maybeSingle();
+        .in('date', saturdayDates);
 
       if (saturdayError) throw saturdayError;
 
@@ -35,10 +43,18 @@ export function useWeekSchedule(weekStartDate: Date) {
         return weekdayData?.find((d) => d.date === date) || null;
       });
 
+      // Find Saturday and last Friday schedules
+      const saturdaySchedule = saturdayStyleData?.find((s) => s.date === dates[6]) || null;
+      const lastFridaySchedule = fridayIsLastOfMonth
+        ? saturdayStyleData?.find((s) => s.date === dates[5]) || null
+        : null;
+
       return {
         startDate: format(startDate, 'yyyy-MM-dd'),
         days,
-        saturday: saturdayData,
+        saturday: saturdaySchedule,
+        lastFriday: lastFridaySchedule,
+        fridayIsLastOfMonth,
       };
     },
   });

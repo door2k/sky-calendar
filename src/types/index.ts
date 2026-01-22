@@ -33,6 +33,8 @@ export interface DaySchedule {
   notes?: string;
   created_by?: string;
   updated_by?: string;
+  family_dinner_person_id?: string; // For Friday family dinner
+  family_dinner_time?: string; // Default "16:00"
 }
 
 export interface SaturdayActivity {
@@ -48,6 +50,8 @@ export interface SaturdaySchedule {
   notes?: string;
   created_by?: string;
   updated_by?: string;
+  family_dinner_person_id?: string; // For last Friday family dinner
+  family_dinner_time?: string; // Default "16:00"
 }
 
 export interface Settings {
@@ -79,4 +83,6 @@ export interface WeekData {
   startDate: string;
   days: (DaySchedule | null)[];
   saturday: SaturdaySchedule | null;
+  lastFriday?: SaturdaySchedule | null;
+  fridayIsLastOfMonth?: boolean;
 }

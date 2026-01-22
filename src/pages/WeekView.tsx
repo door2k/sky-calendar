@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { startOfWeek, addWeeks, addDays, format, parseISO, isSameDay } from 'date-fns';
 import { DayCard } from '../components/DayCard';
@@ -52,10 +52,18 @@ export function WeekView() {
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [editingDate, setEditingDate] = useState<Date | null>(null);
   const [showAddActivity, setShowAddActivity] = useState(false);
+  const todayRef = useRef<HTMLDivElement>(null);
 
   const today = useMemo(() => new Date(), []);
   const currentWeekStart = useMemo(() => startOfWeek(today, { weekStartsOn: 0 }), [today]);
   const isCurrentWeek = isSameDay(weekStart, currentWeekStart);
+
+  // Scroll to today on mount
+  useEffect(() => {
+    if (todayRef.current && isCurrentWeek) {
+      todayRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [weekData, isCurrentWeek]);
 
   const weekDates = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -127,41 +135,49 @@ export function WeekView() {
 
         {/* Day Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-4">
-          {weekDates.slice(0, 6).map((dayDate, index) => (
-            <DayCard
-              key={format(dayDate, 'yyyy-MM-dd')}
-              date={dayDate}
-              schedule={weekData?.days[index] || null}
-              people={people}
-              activities={activities}
-              onEdit={() => setEditingDate(dayDate)}
-              onActivityClick={setSelectedActivity}
-              isToday={isSameDay(dayDate, today)}
-            />
-          ))}
+          {weekDates.slice(0, 6).map((dayDate, index) => {
+            const isToday = isSameDay(dayDate, today);
+            return (
+              <div key={format(dayDate, 'yyyy-MM-dd')} ref={isToday ? todayRef : undefined}>
+                <DayCard
+                  date={dayDate}
+                  schedule={weekData?.days[index] || null}
+                  people={people}
+                  activities={activities}
+                  onEdit={() => setEditingDate(dayDate)}
+                  onActivityClick={setSelectedActivity}
+                  isToday={isToday}
+                  isLastFriday={index === 5 && weekData?.fridayIsLastOfMonth}
+                  lastFridaySchedule={index === 5 ? weekData?.lastFriday : undefined}
+                />
+              </div>
+            );
+          })}
         </div>
 
         {/* Saturday Card */}
-        <DayCard
-          date={weekDates[6]}
-          schedule={null}
-          saturdaySchedule={weekData?.saturday || null}
-          people={people}
-          activities={activities}
-          onEdit={() => setEditingDate(weekDates[6])}
-          onActivityClick={setSelectedActivity}
-          isToday={isSameDay(weekDates[6], today)}
-        />
+        <div ref={isSameDay(weekDates[6], today) ? todayRef : undefined}>
+          <DayCard
+            date={weekDates[6]}
+            schedule={null}
+            saturdaySchedule={weekData?.saturday || null}
+            people={people}
+            activities={activities}
+            onEdit={() => setEditingDate(weekDates[6])}
+            onActivityClick={setSelectedActivity}
+            isToday={isSameDay(weekDates[6], today)}
+          />
+        </div>
 
         {/* Navigation */}
-        <div className="flex items-center justify-between mt-6 no-print">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-6 mb-20 no-print">
           <button
             onClick={handlePrevWeek}
-            className="px-4 py-2 rounded-lg border hover:bg-gray-50"
+            className="w-full sm:w-auto px-4 py-2 rounded-lg border hover:bg-gray-50"
           >
             Previous Week
           </button>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap justify-center gap-2">
             {!isCurrentWeek && (
               <button
                 onClick={handleGoToThisWeek}
@@ -181,7 +197,7 @@ export function WeekView() {
               <button className="px-4 py-2 rounded-lg border hover:bg-gray-50">
                 Print ▾
               </button>
-              <div className="absolute right-0 mt-1 bg-white border rounded-lg shadow-lg hidden group-hover:block z-10 min-w-32">
+              <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 sm:bottom-auto sm:top-full sm:mt-1 sm:right-0 sm:left-auto sm:translate-x-0 bg-white border rounded-lg shadow-lg hidden group-hover:block z-10 min-w-32">
                 <button
                   onClick={handlePrint}
                   className="block w-full px-4 py-2 text-left hover:bg-gray-50 text-sm"
@@ -199,7 +215,7 @@ export function WeekView() {
           </div>
           <button
             onClick={handleNextWeek}
-            className="px-4 py-2 rounded-lg border hover:bg-gray-50"
+            className="w-full sm:w-auto px-4 py-2 rounded-lg border hover:bg-gray-50"
           >
             Next Week
           </button>
@@ -223,6 +239,7 @@ export function WeekView() {
             )] || null
           }
           saturdaySchedule={weekData?.saturday || null}
+          lastFridaySchedule={weekData?.lastFriday || null}
           people={people}
           activities={activities}
           onSave={handleSaveDay}
