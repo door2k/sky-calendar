@@ -23,11 +23,11 @@ export function ActivityPopup({ activity, onClose }: ActivityPopupProps) {
       {
         id: activity.id,
         name,
-        address: address || null,
-        maps_url: mapsUrl || null,
-        contact_phone: contactPhone || null,
-        note: note || null,
-        default_time: defaultTime || null,
+        address: address || undefined,
+        maps_url: mapsUrl || undefined,
+        contact_phone: contactPhone || undefined,
+        note: note || undefined,
+        default_time: defaultTime || undefined,
       },
       {
         onSuccess: () => {
