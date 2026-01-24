@@ -37,6 +37,27 @@ export function useCreateActivity() {
   });
 }
 
+export function useUpdateActivity() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (activity: Partial<Activity> & { id: string }) => {
+      const { data, error } = await supabase
+        .from('activities')
+        .update(activity)
+        .eq('id', activity.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['activities'] });
+    },
+  });
+}
+
 export function useDeleteActivity() {
   const queryClient = useQueryClient();
 
