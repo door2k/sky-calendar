@@ -1,7 +1,9 @@
-import { format, isSaturday, isFriday } from 'date-fns';
+import { format, isSaturday, isFriday, getDay } from 'date-fns';
 import { isLastFridayOfMonth } from '../lib/dateUtils';
 import type { DaySchedule, SaturdaySchedule, Person, Activity } from '../types';
 import { PersonAvatar } from './PersonAvatar';
+
+const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
 interface DayCardProps {
   date: Date;
@@ -53,6 +55,15 @@ export function DayCard({
   const getActivity = (id?: string) => {
     if (!id) return null;
     return activities.find((a) => a.id === id);
+  };
+
+  // Get recurring activities for this day of the week
+  const getRecurringActivitiesForDay = (): Activity[] => {
+    const dayOfWeek = getDay(date);
+    const dayName = DAY_NAMES[dayOfWeek];
+    return activities.filter(
+      (a) => a.is_recurring && a.recurrence_day?.toLowerCase() === dayName
+    );
   };
 
   // Render Saturday-style card for Saturdays and last Fridays
@@ -210,6 +221,29 @@ export function DayCard({
               <span>—</span>
             )}
           </div>
+
+          {/* Recurring activities for this day (if not already shown via explicit assignment) */}
+          {getRecurringActivitiesForDay()
+            .filter((a) => a.id !== schedule?.after_gan_activity_id)
+            .map((activity) => (
+              <div
+                key={activity.id}
+                className="flex items-center gap-2 p-2 rounded bg-purple-50"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onActivityClick(activity);
+                }}
+              >
+                <span className="text-purple-600">○</span>
+                <span className="cursor-pointer hover:underline text-purple-700">
+                  {activity.name}
+                  {activity.default_time && (
+                    <span className="text-purple-500 ml-1">{activity.default_time}</span>
+                  )}
+                  <span className="ml-1">▸</span>
+                </span>
+              </div>
+            ))}
 
           <div className="flex items-center gap-2 p-2 rounded bg-gray-50">
             <span>🌙</span>
