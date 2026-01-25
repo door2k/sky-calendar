@@ -169,12 +169,21 @@ export function PrintWeek() {
       <div className="grid grid-cols-6 gap-2 mb-4">
         {weekDates.slice(0, 6).map((date, idx) => {
           const day = weekData?.days[idx];
-          const isNoGan = day?.is_no_gan;
+          const isFriday = idx === 5;
+          const isLastFriday = isFriday && weekData?.fridayIsLastOfMonth;
+          const isNoGan = day?.is_no_gan || isLastFriday;
           const activity = getActivity(day?.after_gan_activity_id);
           const recurringActivities = getRecurringActivitiesForDay(date)
             .filter(a => a.id !== day?.after_gan_activity_id);
           const vibe = DAY_VIBES[idx];
-          const isFriday = idx === 5;
+
+          // For last Friday, family dinner is in saturday_schedules (lastFriday), not day_schedules
+          const familyDinnerPersonId = isLastFriday
+            ? weekData?.lastFriday?.family_dinner_person_id
+            : day?.family_dinner_person_id;
+          const familyDinnerTime = isLastFriday
+            ? weekData?.lastFriday?.family_dinner_time
+            : day?.family_dinner_time;
 
           return (
             <div
@@ -196,9 +205,11 @@ export function PrintWeek() {
               {isNoGan && (
                 <div className="bg-orange-500 text-white text-center py-1 font-bold text-sm">
                   🏠 NO GAN! 🏠
-                  {day?.no_gan_reason && (
+                  {isLastFriday ? (
+                    <div className="text-xs font-normal">Last Friday of the Month!</div>
+                  ) : day?.no_gan_reason ? (
                     <div className="text-xs font-normal">{day.no_gan_reason}</div>
-                  )}
+                  ) : null}
                 </div>
               )}
 
@@ -258,11 +269,11 @@ export function PrintWeek() {
                     <div className="text-center">
                       <span className="text-lg">🍽️</span>
                       <div className="font-bold text-amber-800 text-xs">Family Dinner</div>
-                      {day?.family_dinner_person_id ? (
+                      {familyDinnerPersonId ? (
                         <div className="flex flex-col items-center mt-1">
-                          {renderPerson(day.family_dinner_person_id, 'sm')}
-                          {day.family_dinner_time && (
-                            <span className="text-xs text-amber-700">{day.family_dinner_time}</span>
+                          {renderPerson(familyDinnerPersonId, 'sm')}
+                          {familyDinnerTime && (
+                            <span className="text-xs text-amber-700">{familyDinnerTime}</span>
                           )}
                         </div>
                       ) : (

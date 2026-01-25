@@ -1,6 +1,6 @@
 # Sky's Schedule Calendar - Project Brain
 
-> **Last Updated:** 2026-01-22
+> **Last Updated:** 2026-01-25
 > **Status:** Active Development
 > **Live URL:** https://sky-calendar.vercel.app
 
@@ -205,12 +205,12 @@ Actions are sorted before execution to handle dependencies:
 ### Feature Requests (Backlog)
 - [x] Add images/photos for people - `PersonAvatar.tsx` + `PeopleEditor.tsx`
 - [x] URL should not change when switching weeks - State-based navigation in `WeekView.tsx`
-- [ ] AI assistant available in monthly view (currently only in weekly view)
+- [x] AI assistant available in monthly view - AIAssistant imported in `MonthView.tsx`
 - [x] Combined print view (weekly + monthly calendar on same page) - `PrintCombined.tsx`
-- [ ] Voice input for AI assistant (speech-to-text)
+- [x] Voice input for AI assistant (speech-to-text) - Web Speech API in `AIAssistant.tsx`
 - [x] Highlight today's card in weekly view - `isToday` prop in `DayCard.tsx`
 - [x] "Go to this week" button - "This Week" button in `WeekView.tsx`
-- [ ] Redesign print views to be more visually pleasing, fun, and creative
+- [x] Redesign print views - Fun gradients, emojis, DAY_VIBES in `PrintWeek.tsx`
 - [x] Track who created each event - Fields exist (`created_by`, `updated_by`), UI partial
 
 ## Development Notes
@@ -256,7 +256,14 @@ npx vercel logs sky-calendar.vercel.app --since 5m
 
 ## Changelog
 
-### 2026-01-22 (Latest Session)
+### 2026-01-25 (Latest Session)
+- **Fixed print view data mismatch bugs**:
+  - PrintWeek.tsx and PrintCombined.tsx now correctly handle "last Friday of month" as no-gan day
+  - Family dinner data now correctly sourced from `saturday_schedules` table for last Fridays
+  - Added "Last Friday of the Month!" label in no-gan banner
+- **Updated backlog**: Marked AI assistant in monthly view, voice input, and print redesign as completed
+
+### 2026-01-22
 - **Added Friday Family Dinner feature**: All Fridays now have a family dinner slot
   - Shows hosting person with large (2x) avatar
   - Editable time (default 4pm)

@@ -205,12 +205,18 @@ export function PrintCombined() {
       <div className="grid grid-cols-6 gap-1.5 mb-3">
         {weekDates.slice(0, 6).map((date, idx) => {
           const day = weekData?.days[idx];
-          const isNoGan = day?.is_no_gan;
+          const isFriday = idx === 5;
+          const isLastFriday = isFriday && weekData?.fridayIsLastOfMonth;
+          const isNoGan = day?.is_no_gan || isLastFriday;
           const activity = getActivity(day?.after_gan_activity_id);
           const recurringActivities = getRecurringActivitiesForDay(date)
             .filter(a => a.id !== day?.after_gan_activity_id);
           const vibe = { color: DAY_COLORS[idx], emoji: WEEKDAY_EMOJIS[idx] };
-          const isFriday = idx === 5;
+
+          // For last Friday, family dinner is in saturday_schedules (lastFriday), not day_schedules
+          const familyDinnerPersonId = isLastFriday
+            ? weekData?.lastFriday?.family_dinner_person_id
+            : day?.family_dinner_person_id;
 
           return (
             <div
@@ -230,7 +236,7 @@ export function PrintCombined() {
 
               {isNoGan && (
                 <div className="bg-orange-500 text-white text-center py-0.5 font-bold" style={{ fontSize: '9px' }}>
-                  🏠 NO GAN
+                  🏠 {isLastFriday ? 'LAST FRI' : 'NO GAN'}
                 </div>
               )}
 
@@ -265,10 +271,10 @@ export function PrintCombined() {
                   {renderPerson(day?.bedtime_person_id)}
                 </div>
 
-                {isFriday && day?.family_dinner_person_id && (
+                {isFriday && familyDinnerPersonId && (
                   <div className="p-1 rounded bg-amber-100 border border-amber-300 text-center">
                     <span>🍽️</span>
-                    {renderPerson(day.family_dinner_person_id)}
+                    {renderPerson(familyDinnerPersonId)}
                   </div>
                 )}
               </div>
