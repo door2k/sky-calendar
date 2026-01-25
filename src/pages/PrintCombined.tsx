@@ -82,10 +82,13 @@ export function PrintCombined() {
     return people.find((p) => p.id === id) || null;
   };
 
-  const renderPerson = (id?: string) => {
+  // For print: show avatar only (no name) for cleaner layout
+  const renderPersonPrint = (id?: string) => {
     const person = getPerson(id);
-    if (!person) return <span className="text-gray-300">—</span>;
-    return <PersonAvatar person={person} size="sm" printSize />;
+    if (!person) return <span className="text-gray-400" style={{ fontSize: '8px' }}>—</span>;
+    // If person has avatar, show avatar only; otherwise show name
+    const hasAvatar = person.avatar_url;
+    return <PersonAvatar person={person} size="sm" showName={!hasAvatar} printSize />;
   };
 
   const getActivity = (id?: string): Activity | undefined => {
@@ -259,41 +262,44 @@ export function PrintCombined() {
                 </div>
               )}
 
-              <div className="p-1.5 space-y-1" style={{ fontSize: '9px' }}>
-                <div className={`flex items-center gap-1 p-1 rounded ${isNoGan ? 'opacity-40' : ''}`}
+              <div className="p-1 space-y-1" style={{ fontSize: '8px' }}>
+                {/* Drop-off & Pickup Row */}
+                <div className={`flex justify-around p-1 rounded ${isNoGan ? 'opacity-40' : ''}`}
                   style={{ backgroundColor: 'var(--color-gan)' }}>
-                  <span>🌅</span>
-                  {renderPerson(day?.dropoff_person_id)}
-                </div>
-
-                <div className={`flex items-center gap-1 p-1 rounded ${isNoGan ? 'opacity-40' : ''}`}
-                  style={{ backgroundColor: 'var(--color-gan)' }}>
-                  <span>🌆</span>
-                  {renderPerson(day?.pickup_person_id)}
+                  <div className="flex flex-col items-center">
+                    <span style={{ fontSize: '10px' }}>🌅</span>
+                    {renderPersonPrint(day?.dropoff_person_id)}
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span style={{ fontSize: '10px' }}>🌆</span>
+                    {renderPersonPrint(day?.pickup_person_id)}
+                  </div>
                 </div>
 
                 {activity && (
                   <div className="p-1 rounded text-center text-white font-medium"
-                    style={{ backgroundColor: 'var(--color-primary)' }}>
+                    style={{ backgroundColor: 'var(--color-primary)', fontSize: '8px' }}>
                     🎯 {activity.name}
                   </div>
                 )}
 
                 {recurringActivities.slice(0, 1).map((act) => (
-                  <div key={act.id} className="p-1 rounded text-center bg-purple-100 text-purple-700 font-medium">
+                  <div key={act.id} className="p-1 rounded text-center bg-purple-100 text-purple-700 font-medium"
+                    style={{ fontSize: '8px' }}>
                     ○ {act.name}
                   </div>
                 ))}
 
-                <div className="flex items-center gap-1 p-1 rounded bg-indigo-50">
-                  <span>🌙</span>
-                  {renderPerson(day?.bedtime_person_id)}
+                {/* Bedtime */}
+                <div className="flex flex-col items-center p-1 rounded bg-indigo-100">
+                  <span style={{ fontSize: '10px' }}>🌙</span>
+                  {renderPersonPrint(day?.bedtime_person_id)}
                 </div>
 
                 {isFriday && familyDinnerPersonId && (
-                  <div className="p-1 rounded bg-amber-100 border border-amber-300 text-center">
-                    <span>🍽️</span>
-                    {renderPerson(familyDinnerPersonId)}
+                  <div className="flex flex-col items-center p-1 rounded bg-amber-100 border border-amber-300">
+                    <span style={{ fontSize: '10px' }}>🍽️</span>
+                    {renderPersonPrint(familyDinnerPersonId)}
                   </div>
                 )}
               </div>

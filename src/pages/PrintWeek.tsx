@@ -62,10 +62,14 @@ export function PrintWeek() {
     );
   };
 
-  const renderPerson = (id?: string, size: 'sm' | 'md' = 'md') => {
+  // For print: show avatar only (no name) for cleaner layout
+  // If no avatar, show name as fallback
+  const renderPersonPrint = (id?: string, size: 'sm' | 'md' = 'sm') => {
     const person = getPerson(id);
-    if (!person) return <span className="text-gray-300">—</span>;
-    return <PersonAvatar person={person} size={size} printSize />;
+    if (!person) return <span className="text-gray-400 text-xs">—</span>;
+    // If person has avatar, show avatar only; otherwise show name
+    const hasAvatar = person.avatar_url;
+    return <PersonAvatar person={person} size={size} showName={!hasAvatar} printSize />;
   };
 
   // Auto-print on load - wait for images to load first
@@ -233,31 +237,30 @@ export function PrintWeek() {
               )}
 
               {/* Day Content */}
-              <div className="p-2 space-y-2 text-xs">
-                {/* Drop-off */}
-                <div className={`flex items-center gap-1 p-1.5 rounded-lg ${isNoGan ? 'opacity-40 line-through' : ''}`}
+              <div className="p-2 space-y-1.5 text-xs">
+                {/* Drop-off & Pickup Row */}
+                <div className={`flex justify-around p-1.5 rounded-lg ${isNoGan ? 'opacity-40' : ''}`}
                   style={{ backgroundColor: 'var(--color-gan)' }}>
-                  <span>🌅</span>
-                  {renderPerson(day?.dropoff_person_id, 'sm')}
+                  <div className="flex flex-col items-center">
+                    <span className="text-sm">🌅</span>
+                    {renderPersonPrint(day?.dropoff_person_id, 'sm')}
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-sm">🌆</span>
+                    {renderPersonPrint(day?.pickup_person_id, 'sm')}
+                  </div>
                 </div>
 
                 {/* Gan Activity */}
                 {!isNoGan && day?.gan_activity && (
-                  <div className="text-center py-1 bg-green-100 rounded-lg text-green-700 font-medium">
+                  <div className="text-center py-1 bg-green-100 rounded-lg text-green-700 font-medium text-xs">
                     🏫 {day.gan_activity}
                   </div>
                 )}
 
-                {/* Pickup */}
-                <div className={`flex items-center gap-1 p-1.5 rounded-lg ${isNoGan ? 'opacity-40 line-through' : ''}`}
-                  style={{ backgroundColor: 'var(--color-gan)' }}>
-                  <span>🌆</span>
-                  {renderPerson(day?.pickup_person_id, 'sm')}
-                </div>
-
                 {/* After-Gan Activity */}
                 {activity && (
-                  <div className="p-1.5 rounded-lg text-center font-medium"
+                  <div className="p-1.5 rounded-lg text-center font-medium text-xs"
                     style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
                     🎯 {activity.name}
                     {day?.after_gan_time && (
@@ -268,7 +271,7 @@ export function PrintWeek() {
 
                 {/* Recurring Activities */}
                 {recurringActivities.map((act) => (
-                  <div key={act.id} className="p-1.5 rounded-lg text-center font-medium bg-purple-100 text-purple-700">
+                  <div key={act.id} className="p-1.5 rounded-lg text-center font-medium bg-purple-100 text-purple-700 text-xs">
                     ○ {act.name}
                     {act.default_time && (
                       <div className="text-xs opacity-80">{act.default_time}</div>
@@ -277,24 +280,23 @@ export function PrintWeek() {
                 ))}
 
                 {/* Bedtime */}
-                <div className="flex items-center gap-1 p-1.5 rounded-lg bg-indigo-50">
-                  <span>🌙</span>
-                  {renderPerson(day?.bedtime_person_id, 'sm')}
+                <div className="flex flex-col items-center p-1.5 rounded-lg bg-indigo-100">
+                  <span className="text-sm">🌙</span>
+                  {renderPersonPrint(day?.bedtime_person_id, 'sm')}
                 </div>
 
                 {/* Friday Family Dinner */}
                 {isFriday && (
                   <div className="p-2 rounded-lg bg-amber-100 border-2 border-amber-300">
-                    <div className="text-center">
+                    <div className="flex flex-col items-center">
                       <span className="text-lg">🍽️</span>
-                      <div className="font-bold text-amber-800 text-xs">Family Dinner</div>
                       {familyDinnerPersonId ? (
-                        <div className="flex flex-col items-center mt-1">
-                          {renderPerson(familyDinnerPersonId, 'sm')}
+                        <>
+                          {renderPersonPrint(familyDinnerPersonId, 'md')}
                           {familyDinnerTime && (
-                            <span className="text-xs text-amber-700">{familyDinnerTime}</span>
+                            <span className="text-xs text-amber-700 mt-0.5">{familyDinnerTime}</span>
                           )}
-                        </div>
+                        </>
                       ) : (
                         <span className="text-amber-400 text-xs">TBD</span>
                       )}
