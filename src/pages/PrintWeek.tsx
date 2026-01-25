@@ -62,14 +62,16 @@ export function PrintWeek() {
     );
   };
 
-  // For print: show avatar only (no name) for cleaner layout
-  // If no avatar, show name as fallback
+  // For print: stack avatar and name vertically to avoid collision
   const renderPersonPrint = (id?: string, size: 'sm' | 'md' = 'sm') => {
     const person = getPerson(id);
     if (!person) return <span className="text-gray-400 text-xs">—</span>;
-    // If person has avatar, show avatar only; otherwise show name
-    const hasAvatar = person.avatar_url;
-    return <PersonAvatar person={person} size={size} showName={!hasAvatar} printSize />;
+    return (
+      <div className="flex flex-col items-center">
+        <PersonAvatar person={person} size={size} showName={false} printSize />
+        <span className="text-xs mt-0.5 leading-tight text-center truncate max-w-full">{person.name}</span>
+      </div>
+    );
   };
 
   // Auto-print on load - wait for images to load first

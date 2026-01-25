@@ -82,13 +82,16 @@ export function PrintCombined() {
     return people.find((p) => p.id === id) || null;
   };
 
-  // For print: show avatar only (no name) for cleaner layout
+  // For print: stack avatar and name vertically to avoid collision
   const renderPersonPrint = (id?: string) => {
     const person = getPerson(id);
     if (!person) return <span className="text-gray-400" style={{ fontSize: '8px' }}>—</span>;
-    // If person has avatar, show avatar only; otherwise show name
-    const hasAvatar = person.avatar_url;
-    return <PersonAvatar person={person} size="sm" showName={!hasAvatar} printSize />;
+    return (
+      <div className="flex flex-col items-center">
+        <PersonAvatar person={person} size="sm" showName={false} printSize />
+        <span className="mt-0.5 leading-tight text-center truncate max-w-full" style={{ fontSize: '7px' }}>{person.name}</span>
+      </div>
+    );
   };
 
   const getActivity = (id?: string): Activity | undefined => {
