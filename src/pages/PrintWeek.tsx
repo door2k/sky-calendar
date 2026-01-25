@@ -68,11 +68,30 @@ export function PrintWeek() {
     return <PersonAvatar person={person} size={size} printSize />;
   };
 
-  // Auto-print on load
+  // Auto-print on load - wait for images to load first
   useEffect(() => {
+    if (!weekData) return;
+
+    const waitForImages = () => {
+      const images = document.querySelectorAll('img');
+      const imagePromises = Array.from(images).map((img) => {
+        if (img.complete) return Promise.resolve();
+        return new Promise((resolve) => {
+          img.onload = resolve;
+          img.onerror = resolve; // Don't block on failed images
+        });
+      });
+
+      return Promise.all(imagePromises);
+    };
+
+    // Wait for data, then images, then print
     const timer = setTimeout(() => {
-      window.print();
-    }, 500);
+      waitForImages().then(() => {
+        window.print();
+      });
+    }, 300);
+
     return () => clearTimeout(timer);
   }, [weekData]);
 

@@ -159,11 +159,30 @@ export function PrintCombined() {
     return Array.from(activityMap.values());
   }, [weekData, activities, weekDates]);
 
-  // Auto-print on load
+  // Auto-print on load - wait for images to load first
   useEffect(() => {
+    if (!weekData || !monthData) return;
+
+    const waitForImages = () => {
+      const images = document.querySelectorAll('img');
+      const imagePromises = Array.from(images).map((img) => {
+        if (img.complete) return Promise.resolve();
+        return new Promise((resolve) => {
+          img.onload = resolve;
+          img.onerror = resolve; // Don't block on failed images
+        });
+      });
+
+      return Promise.all(imagePromises);
+    };
+
+    // Wait for data, then images, then print
     const timer = setTimeout(() => {
-      window.print();
-    }, 500);
+      waitForImages().then(() => {
+        window.print();
+      });
+    }, 300);
+
     return () => clearTimeout(timer);
   }, [weekData, monthData]);
 
