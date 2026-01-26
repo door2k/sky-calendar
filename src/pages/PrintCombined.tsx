@@ -82,14 +82,16 @@ export function PrintCombined() {
     return people.find((p) => p.id === id) || null;
   };
 
-  // For print: stack avatar and name vertically to avoid collision
+  // For print: avatar and name side by side, name truncates if needed
   const renderPersonPrint = (id?: string) => {
     const person = getPerson(id);
     if (!person) return <span className="text-gray-400" style={{ fontSize: '8px' }}>—</span>;
     return (
-      <div className="flex flex-col items-center">
-        <PersonAvatar person={person} size="sm" showName={false} printSize />
-        <span className="mt-0.5 leading-tight text-center truncate max-w-full" style={{ fontSize: '7px' }}>{person.name}</span>
+      <div className="flex items-center gap-1 min-w-0">
+        <div className="flex-shrink-0">
+          <PersonAvatar person={person} size="sm" showName={false} printSize />
+        </div>
+        <span className="leading-tight truncate" style={{ fontSize: '8px' }}>{person.name}</span>
       </div>
     );
   };
@@ -265,18 +267,19 @@ export function PrintCombined() {
                 </div>
               )}
 
-              <div className="p-1 space-y-1" style={{ fontSize: '8px' }}>
-                {/* Drop-off & Pickup Row */}
-                <div className={`flex justify-around p-1 rounded ${isNoGan ? 'opacity-40' : ''}`}
+              <div className="p-1 space-y-0.5" style={{ fontSize: '8px' }}>
+                {/* Drop-off */}
+                <div className={`flex items-center gap-1 p-1 rounded ${isNoGan ? 'opacity-40' : ''}`}
                   style={{ backgroundColor: 'var(--color-gan)' }}>
-                  <div className="flex flex-col items-center">
-                    <span style={{ fontSize: '10px' }}>🌅</span>
-                    {renderPersonPrint(day?.dropoff_person_id)}
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <span style={{ fontSize: '10px' }}>🌆</span>
-                    {renderPersonPrint(day?.pickup_person_id)}
-                  </div>
+                  <span className="flex-shrink-0" style={{ fontSize: '10px' }}>🌅</span>
+                  {renderPersonPrint(day?.dropoff_person_id)}
+                </div>
+
+                {/* Pickup */}
+                <div className={`flex items-center gap-1 p-1 rounded ${isNoGan ? 'opacity-40' : ''}`}
+                  style={{ backgroundColor: 'var(--color-gan)' }}>
+                  <span className="flex-shrink-0" style={{ fontSize: '10px' }}>🌆</span>
+                  {renderPersonPrint(day?.pickup_person_id)}
                 </div>
 
                 {activity && (
@@ -294,14 +297,14 @@ export function PrintCombined() {
                 ))}
 
                 {/* Bedtime */}
-                <div className="flex flex-col items-center p-1 rounded bg-indigo-100">
-                  <span style={{ fontSize: '10px' }}>🌙</span>
+                <div className="flex items-center gap-1 p-1 rounded bg-indigo-100">
+                  <span className="flex-shrink-0" style={{ fontSize: '10px' }}>🌙</span>
                   {renderPersonPrint(day?.bedtime_person_id)}
                 </div>
 
                 {isFriday && familyDinnerPersonId && (
-                  <div className="flex flex-col items-center p-1 rounded bg-amber-100 border border-amber-300">
-                    <span style={{ fontSize: '10px' }}>🍽️</span>
+                  <div className="flex items-center gap-1 p-1 rounded bg-amber-100 border border-amber-300">
+                    <span className="flex-shrink-0" style={{ fontSize: '10px' }}>🍽️</span>
                     {renderPersonPrint(familyDinnerPersonId)}
                   </div>
                 )}

@@ -62,14 +62,16 @@ export function PrintWeek() {
     );
   };
 
-  // For print: stack avatar and name vertically to avoid collision
+  // For print: avatar and name side by side, name truncates if needed
   const renderPersonPrint = (id?: string, size: 'sm' | 'md' = 'sm') => {
     const person = getPerson(id);
     if (!person) return <span className="text-gray-400 text-xs">—</span>;
     return (
-      <div className="flex flex-col items-center">
-        <PersonAvatar person={person} size={size} showName={false} printSize />
-        <span className="text-xs mt-0.5 leading-tight text-center truncate max-w-full">{person.name}</span>
+      <div className="flex items-center gap-1.5 min-w-0">
+        <div className="flex-shrink-0">
+          <PersonAvatar person={person} size={size} showName={false} printSize />
+        </div>
+        <span className="text-xs leading-tight truncate">{person.name}</span>
       </div>
     );
   };
@@ -240,17 +242,18 @@ export function PrintWeek() {
 
               {/* Day Content */}
               <div className="p-2 space-y-1.5 text-xs">
-                {/* Drop-off & Pickup Row */}
-                <div className={`flex justify-around p-1.5 rounded-lg ${isNoGan ? 'opacity-40' : ''}`}
+                {/* Drop-off */}
+                <div className={`flex items-center gap-2 p-1.5 rounded-lg ${isNoGan ? 'opacity-40' : ''}`}
                   style={{ backgroundColor: 'var(--color-gan)' }}>
-                  <div className="flex flex-col items-center">
-                    <span className="text-sm">🌅</span>
-                    {renderPersonPrint(day?.dropoff_person_id, 'sm')}
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <span className="text-sm">🌆</span>
-                    {renderPersonPrint(day?.pickup_person_id, 'sm')}
-                  </div>
+                  <span className="text-base flex-shrink-0">🌅</span>
+                  {renderPersonPrint(day?.dropoff_person_id, 'sm')}
+                </div>
+
+                {/* Pickup */}
+                <div className={`flex items-center gap-2 p-1.5 rounded-lg ${isNoGan ? 'opacity-40' : ''}`}
+                  style={{ backgroundColor: 'var(--color-gan)' }}>
+                  <span className="text-base flex-shrink-0">🌆</span>
+                  {renderPersonPrint(day?.pickup_person_id, 'sm')}
                 </div>
 
                 {/* Gan Activity */}
@@ -282,27 +285,25 @@ export function PrintWeek() {
                 ))}
 
                 {/* Bedtime */}
-                <div className="flex flex-col items-center p-1.5 rounded-lg bg-indigo-100">
-                  <span className="text-sm">🌙</span>
+                <div className="flex items-center gap-2 p-1.5 rounded-lg bg-indigo-100">
+                  <span className="text-base flex-shrink-0">🌙</span>
                   {renderPersonPrint(day?.bedtime_person_id, 'sm')}
                 </div>
 
                 {/* Friday Family Dinner */}
                 {isFriday && (
-                  <div className="p-2 rounded-lg bg-amber-100 border-2 border-amber-300">
-                    <div className="flex flex-col items-center">
-                      <span className="text-lg">🍽️</span>
-                      {familyDinnerPersonId ? (
-                        <>
-                          {renderPersonPrint(familyDinnerPersonId, 'md')}
-                          {familyDinnerTime && (
-                            <span className="text-xs text-amber-700 mt-0.5">{familyDinnerTime}</span>
-                          )}
-                        </>
-                      ) : (
-                        <span className="text-amber-400 text-xs">TBD</span>
-                      )}
-                    </div>
+                  <div className="flex items-center gap-2 p-1.5 rounded-lg bg-amber-100 border-2 border-amber-300">
+                    <span className="text-base flex-shrink-0">🍽️</span>
+                    {familyDinnerPersonId ? (
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        {renderPersonPrint(familyDinnerPersonId, 'sm')}
+                        {familyDinnerTime && (
+                          <span className="text-xs text-amber-700 flex-shrink-0">@{familyDinnerTime}</span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-amber-400 text-xs">TBD</span>
+                    )}
                   </div>
                 )}
               </div>
