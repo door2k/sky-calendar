@@ -62,16 +62,14 @@ export function PrintWeek() {
     );
   };
 
-  // For print: avatar and name side by side, name truncates if needed
+  // For print: picture centered, name below
   const renderPersonPrint = (id?: string, size: 'sm' | 'md' = 'sm') => {
     const person = getPerson(id);
     if (!person) return <span className="text-gray-400 text-xs">—</span>;
     return (
-      <div className="flex items-center gap-1.5 min-w-0">
-        <div className="flex-shrink-0">
-          <PersonAvatar person={person} size={size} showName={false} printSize />
-        </div>
-        <span className="text-xs leading-tight truncate">{person.name}</span>
+      <div className="flex flex-col items-center">
+        <PersonAvatar person={person} size={size} showName={false} printSize />
+        <span className="text-xs leading-tight text-center mt-0.5">{person.name}</span>
       </div>
     );
   };
@@ -245,7 +243,6 @@ export function PrintWeek() {
                 {/* Drop-off */}
                 <div className={`p-1.5 rounded-lg ${isNoGan ? 'opacity-40' : ''}`}
                   style={{ backgroundColor: 'var(--color-gan)' }}>
-                  <div className="text-xs text-gray-500 mb-0.5">Drop-off</div>
                   {renderPersonPrint(day?.dropoff_person_id, 'sm')}
                 </div>
 
@@ -259,7 +256,6 @@ export function PrintWeek() {
                 {/* Pickup */}
                 <div className={`p-1.5 rounded-lg ${isNoGan ? 'opacity-40' : ''}`}
                   style={{ backgroundColor: 'var(--color-gan)' }}>
-                  <div className="text-xs text-gray-500 mb-0.5">Pickup</div>
                   {renderPersonPrint(day?.pickup_person_id, 'sm')}
                 </div>
 
@@ -286,18 +282,19 @@ export function PrintWeek() {
 
                 {/* Bedtime */}
                 <div className="p-1.5 rounded-lg bg-indigo-100">
-                  <div className="text-xs text-gray-500 mb-0.5">Bedtime</div>
                   {renderPersonPrint(day?.bedtime_person_id, 'sm')}
                 </div>
 
                 {/* Friday Family Dinner */}
                 {isFriday && (
                   <div className="p-1.5 rounded-lg bg-amber-100 border-2 border-amber-300">
-                    <div className="text-xs text-amber-700 mb-0.5">
-                      Family Dinner {familyDinnerTime && `@ ${familyDinnerTime}`}
-                    </div>
                     {familyDinnerPersonId ? (
-                      renderPersonPrint(familyDinnerPersonId, 'sm')
+                      <>
+                        {renderPersonPrint(familyDinnerPersonId, 'sm')}
+                        {familyDinnerTime && (
+                          <div className="text-xs text-amber-700 text-center mt-0.5">@ {familyDinnerTime}</div>
+                        )}
+                      </>
                     ) : (
                       <span className="text-amber-400 text-xs">TBD</span>
                     )}

@@ -82,16 +82,14 @@ export function PrintCombined() {
     return people.find((p) => p.id === id) || null;
   };
 
-  // For print: avatar and name side by side, name truncates if needed
+  // For print: picture centered, name below
   const renderPersonPrint = (id?: string) => {
     const person = getPerson(id);
     if (!person) return <span className="text-gray-400" style={{ fontSize: '8px' }}>—</span>;
     return (
-      <div className="flex items-center gap-1 min-w-0">
-        <div className="flex-shrink-0">
-          <PersonAvatar person={person} size="sm" showName={false} printSize />
-        </div>
-        <span className="leading-tight truncate" style={{ fontSize: '8px' }}>{person.name}</span>
+      <div className="flex flex-col items-center">
+        <PersonAvatar person={person} size="sm" showName={false} printSize />
+        <span className="leading-tight text-center mt-0.5" style={{ fontSize: '8px' }}>{person.name}</span>
       </div>
     );
   };
@@ -271,7 +269,6 @@ export function PrintCombined() {
                 {/* Drop-off */}
                 <div className={`p-1 rounded ${isNoGan ? 'opacity-40' : ''}`}
                   style={{ backgroundColor: 'var(--color-gan)' }}>
-                  <div style={{ fontSize: '7px' }} className="text-gray-500">Drop-off</div>
                   {renderPersonPrint(day?.dropoff_person_id)}
                 </div>
 
@@ -286,7 +283,6 @@ export function PrintCombined() {
                 {/* Pickup */}
                 <div className={`p-1 rounded ${isNoGan ? 'opacity-40' : ''}`}
                   style={{ backgroundColor: 'var(--color-gan)' }}>
-                  <div style={{ fontSize: '7px' }} className="text-gray-500">Pickup</div>
                   {renderPersonPrint(day?.pickup_person_id)}
                 </div>
 
@@ -306,13 +302,11 @@ export function PrintCombined() {
 
                 {/* Bedtime */}
                 <div className="p-1 rounded bg-indigo-100">
-                  <div style={{ fontSize: '7px' }} className="text-gray-500">Bedtime</div>
                   {renderPersonPrint(day?.bedtime_person_id)}
                 </div>
 
                 {isFriday && familyDinnerPersonId && (
                   <div className="p-1 rounded bg-amber-100 border border-amber-300">
-                    <div style={{ fontSize: '7px' }} className="text-amber-700">Dinner</div>
                     {renderPersonPrint(familyDinnerPersonId)}
                   </div>
                 )}
