@@ -269,16 +269,24 @@ export function PrintCombined() {
 
               <div className="p-1 space-y-0.5" style={{ fontSize: '8px' }}>
                 {/* Drop-off */}
-                <div className={`flex items-center gap-1 p-1 rounded ${isNoGan ? 'opacity-40' : ''}`}
+                <div className={`p-1 rounded ${isNoGan ? 'opacity-40' : ''}`}
                   style={{ backgroundColor: 'var(--color-gan)' }}>
-                  <span className="flex-shrink-0" style={{ fontSize: '10px' }}>🌅</span>
+                  <div style={{ fontSize: '7px' }} className="text-gray-500">Drop-off</div>
                   {renderPersonPrint(day?.dropoff_person_id)}
                 </div>
 
+                {/* Gan Activity - between drop-off and pickup */}
+                {!isNoGan && day?.gan_activity && (
+                  <div className="p-1 rounded text-center bg-green-100 text-green-700 font-medium"
+                    style={{ fontSize: '7px' }}>
+                    🏫 {day.gan_activity}
+                  </div>
+                )}
+
                 {/* Pickup */}
-                <div className={`flex items-center gap-1 p-1 rounded ${isNoGan ? 'opacity-40' : ''}`}
+                <div className={`p-1 rounded ${isNoGan ? 'opacity-40' : ''}`}
                   style={{ backgroundColor: 'var(--color-gan)' }}>
-                  <span className="flex-shrink-0" style={{ fontSize: '10px' }}>🌆</span>
+                  <div style={{ fontSize: '7px' }} className="text-gray-500">Pickup</div>
                   {renderPersonPrint(day?.pickup_person_id)}
                 </div>
 
@@ -297,14 +305,14 @@ export function PrintCombined() {
                 ))}
 
                 {/* Bedtime */}
-                <div className="flex items-center gap-1 p-1 rounded bg-indigo-100">
-                  <span className="flex-shrink-0" style={{ fontSize: '10px' }}>🌙</span>
+                <div className="p-1 rounded bg-indigo-100">
+                  <div style={{ fontSize: '7px' }} className="text-gray-500">Bedtime</div>
                   {renderPersonPrint(day?.bedtime_person_id)}
                 </div>
 
                 {isFriday && familyDinnerPersonId && (
-                  <div className="flex items-center gap-1 p-1 rounded bg-amber-100 border border-amber-300">
-                    <span className="flex-shrink-0" style={{ fontSize: '10px' }}>🍽️</span>
+                  <div className="p-1 rounded bg-amber-100 border border-amber-300">
+                    <div style={{ fontSize: '7px' }} className="text-amber-700">Dinner</div>
                     {renderPersonPrint(familyDinnerPersonId)}
                   </div>
                 )}
