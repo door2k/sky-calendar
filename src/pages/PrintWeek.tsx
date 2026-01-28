@@ -280,11 +280,6 @@ export function PrintWeek() {
                   </div>
                 ))}
 
-                {/* Bedtime */}
-                <div className="p-1.5 rounded-lg bg-indigo-100">
-                  {renderPersonPrint(day?.bedtime_person_id, 'sm')}
-                </div>
-
                 {/* Friday Family Dinner */}
                 {isFriday && (
                   <div className="p-1.5 rounded-lg bg-amber-100 border-2 border-amber-300">

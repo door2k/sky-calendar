@@ -300,11 +300,6 @@ export function PrintCombined() {
                   </div>
                 ))}
 
-                {/* Bedtime */}
-                <div className="p-1 rounded bg-indigo-100">
-                  {renderPersonPrint(day?.bedtime_person_id)}
-                </div>
-
                 {isFriday && familyDinnerPersonId && (
                   <div className="p-1 rounded bg-amber-100 border border-amber-300">
                     {renderPersonPrint(familyDinnerPersonId)}
