@@ -244,7 +244,10 @@ export function WeekView() {
           activities={activities}
           onSave={handleSaveDay}
           onClose={() => setEditingDate(null)}
-          onAddActivity={() => setShowAddActivity(true)}
+          onCreateActivity={async (name: string) => {
+            const result = await createActivity.mutateAsync({ name, is_recurring: false });
+            return result;
+          }}
         />
       )}
 

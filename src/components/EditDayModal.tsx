@@ -1,8 +1,118 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { format, isSaturday, isFriday } from 'date-fns';
 import { isLastFridayOfMonth } from '../lib/dateUtils';
 import type { DaySchedule, SaturdaySchedule, Person, Activity } from '../types';
 import { PersonAvatar } from './PersonAvatar';
+
+function ActivityAutocomplete({
+  activities,
+  value,
+  onChange,
+  placeholder = 'Type activity name...',
+}: {
+  activities: Activity[];
+  value: string;
+  onChange: (activityId: string, newName: string | null) => void;
+  placeholder?: string;
+}) {
+  const selectedActivity = activities.find((a) => a.id === value);
+  const [text, setText] = useState(selectedActivity?.name || '');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [highlightIdx, setHighlightIdx] = useState(-1);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Sync text when value prop changes externally (e.g. cleared)
+  useEffect(() => {
+    if (!value) setText('');
+    else {
+      const act = activities.find((a) => a.id === value);
+      if (act) setText(act.name);
+    }
+  }, [value, activities]);
+
+  const filtered = text.trim()
+    ? activities.filter((a) => a.name.toLowerCase().includes(text.toLowerCase()))
+    : activities;
+
+  const exactMatch = activities.find((a) => a.name.toLowerCase() === text.trim().toLowerCase());
+
+  const handleSelect = (activity: Activity) => {
+    setText(activity.name);
+    setShowSuggestions(false);
+    setHighlightIdx(-1);
+    onChange(activity.id, null);
+  };
+
+  const handleInputChange = (newText: string) => {
+    setText(newText);
+    setShowSuggestions(true);
+    setHighlightIdx(-1);
+    // If it matches an existing activity exactly, select it
+    const match = activities.find((a) => a.name.toLowerCase() === newText.trim().toLowerCase());
+    if (match) {
+      onChange(match.id, null);
+    } else {
+      // Signal that this is a new name (no existing ID)
+      onChange('', newText.trim() || null);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!showSuggestions) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightIdx((prev) => Math.min(prev + 1, filtered.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightIdx((prev) => Math.max(prev - 1, 0));
+    } else if (e.key === 'Enter' && highlightIdx >= 0) {
+      e.preventDefault();
+      handleSelect(filtered[highlightIdx]);
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false);
+    }
+  };
+
+  return (
+    <div ref={wrapperRef} className="relative">
+      <input
+        type="text"
+        value={text}
+        onChange={(e) => handleInputChange(e.target.value)}
+        onFocus={() => setShowSuggestions(true)}
+        onKeyDown={handleKeyDown}
+        placeholder={placeholder}
+        className="w-full border rounded-lg p-2"
+      />
+      {showSuggestions && filtered.length > 0 && (
+        <ul className="absolute z-50 w-full bg-white border rounded-lg mt-1 max-h-48 overflow-y-auto shadow-lg">
+          {filtered.map((a, i) => (
+            <li
+              key={a.id}
+              className={`px-3 py-2 cursor-pointer ${i === highlightIdx ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
+              onMouseDown={() => handleSelect(a)}
+            >
+              {a.name}
+            </li>
+          ))}
+        </ul>
+      )}
+      {text.trim() && !exactMatch && !showSuggestions && (
+        <div className="text-xs text-gray-500 mt-1">New activity "{text.trim()}" will be created on save</div>
+      )}
+    </div>
+  );
+}
 
 interface EditDayModalProps {
   date: Date;
@@ -13,7 +123,7 @@ interface EditDayModalProps {
   activities: Activity[];
   onSave: (data: Partial<DaySchedule> | Partial<SaturdaySchedule>) => void;
   onClose: () => void;
-  onAddActivity: () => void;
+  onCreateActivity: (name: string) => Promise<Activity>;
 }
 
 const NO_GAN_REASONS = ['Holiday', 'Staff Training', 'Last Friday', 'Other'];
@@ -27,7 +137,7 @@ export function EditDayModal({
   activities,
   onSave,
   onClose,
-  onAddActivity,
+  onCreateActivity,
 }: EditDayModalProps) {
   const isSat = isSaturday(date);
   const isFri = isFriday(date);
@@ -62,32 +172,59 @@ export function EditDayModal({
     isLastFri ? (satStyleSchedule?.family_dinner_time || '16:00') : (schedule?.family_dinner_time || '16:00')
   );
 
+  // Pending new activity names (not yet created in DB)
+  const [pendingAfterGanName, setPendingAfterGanName] = useState<string | null>(null);
+  const [pendingSatNames, setPendingSatNames] = useState<Record<number, string | null>>({});
+  const [saving, setSaving] = useState(false);
+
   // Creator tracking state
   const [updatedBy, setUpdatedBy] = useState('');
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await handleSaveInner();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveInner = async () => {
     if (useSaturdayStyle) {
-      // For last Fridays (not actual Saturdays), include family dinner
+      // Create any pending new activities for Saturday slots
+      const resolvedActivities = [...satActivities];
+      for (const [idxStr, name] of Object.entries(pendingSatNames)) {
+        if (name) {
+          const created = await onCreateActivity(name);
+          resolvedActivities[Number(idxStr)] = { ...resolvedActivities[Number(idxStr)], activity_id: created.id };
+        }
+      }
+
       const saveData: Partial<SaturdaySchedule> & { date: string } = {
         date: dateStr,
-        activities: satActivities,
+        activities: resolvedActivities,
         notes: satNotes || undefined,
         updated_by: updatedBy || undefined,
       };
-      // Add family dinner for last Fridays (not Saturdays)
       if (isLastFri && !isSat) {
         saveData.family_dinner_person_id = familyDinnerPersonId || undefined;
         saveData.family_dinner_time = familyDinnerTime || undefined;
       }
-      console.log('[EditDayModal] Saving Saturday-style:', { isLastFri, isSat, familyDinnerPersonId, familyDinnerTime, saveData });
       onSave(saveData);
     } else {
+      // Create pending after-gan activity if needed
+      let resolvedActivityId = afterGanActivityId;
+      if (pendingAfterGanName) {
+        const created = await onCreateActivity(pendingAfterGanName);
+        resolvedActivityId = created.id;
+      }
+
       const saveData: Partial<DaySchedule> & { date: string } = {
         date: dateStr,
         dropoff_person_id: dropoffPersonId || undefined,
         gan_activity: ganActivity || undefined,
         pickup_person_id: pickupPersonId || undefined,
-        after_gan_activity_id: afterGanActivityId || undefined,
+        after_gan_activity_id: resolvedActivityId || undefined,
         after_gan_time: afterGanTime || undefined,
         bedtime_person_id: bedtimePersonId || undefined,
         is_no_gan: isNoGan,
@@ -95,7 +232,6 @@ export function EditDayModal({
         notes: notes || undefined,
         updated_by: updatedBy || undefined,
       };
-      // Add family dinner for regular Fridays
       if (isFri) {
         saveData.family_dinner_person_id = familyDinnerPersonId || undefined;
         saveData.family_dinner_time = familyDinnerTime || undefined;
@@ -151,16 +287,17 @@ export function EditDayModal({
                 <div className="space-y-2">
                   {satActivities.map((act, idx) => (
                     <div key={idx} className="flex gap-2 items-center">
-                      <select
-                        value={act.activity_id}
-                        onChange={(e) => updateSaturdayActivity(idx, 'activity_id', e.target.value)}
-                        className="flex-1 border rounded-lg p-2"
-                      >
-                        <option value="">Select activity...</option>
-                        {activities.map((a) => (
-                          <option key={a.id} value={a.id}>{a.name}</option>
-                        ))}
-                      </select>
+                      <div className="flex-1">
+                        <ActivityAutocomplete
+                          activities={activities}
+                          value={act.activity_id}
+                          onChange={(id, newName) => {
+                            updateSaturdayActivity(idx, 'activity_id', id);
+                            setPendingSatNames((prev) => ({ ...prev, [idx]: newName }));
+                          }}
+                          placeholder="Type activity name..."
+                        />
+                      </div>
                       <input
                         type="text"
                         value={act.time || ''}
@@ -287,23 +424,16 @@ export function EditDayModal({
 
               <div>
                 <label className="block text-sm font-medium mb-1">After-Gan Activity</label>
-                <select
+                <ActivityAutocomplete
+                  activities={activities}
                   value={afterGanActivityId}
-                  onChange={(e) => setAfterGanActivityId(e.target.value)}
-                  className="w-full border rounded-lg p-2"
-                >
-                  <option value="">No activity</option>
-                  {activities.map((a) => (
-                    <option key={a.id} value={a.id}>{a.name}</option>
-                  ))}
-                </select>
-                <button
-                  onClick={onAddActivity}
-                  className="mt-1 text-sm text-blue-600 hover:underline"
-                >
-                  + Add new activity
-                </button>
-                {afterGanActivityId && (
+                  onChange={(id, newName) => {
+                    setAfterGanActivityId(id);
+                    setPendingAfterGanName(newName);
+                  }}
+                  placeholder="Type activity name..."
+                />
+                {(afterGanActivityId || pendingAfterGanName) && (
                   <input
                     type="text"
                     value={afterGanTime}
@@ -429,10 +559,11 @@ export function EditDayModal({
             </button>
             <button
               onClick={handleSave}
-              className="flex-1 px-4 py-2 rounded-lg text-white"
+              disabled={saving}
+              className="flex-1 px-4 py-2 rounded-lg text-white disabled:opacity-50"
               style={{ backgroundColor: 'var(--color-primary)' }}
             >
-              Save
+              {saving ? 'Saving...' : 'Save'}
             </button>
           </div>
         </div>
