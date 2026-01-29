@@ -292,11 +292,10 @@ export function PrintCombined() {
                     🎯 {activity.name}
                   </div>
                 )}
-
-                {recurringActivities.slice(0, 1).map((act) => (
-                  <div key={act.id} className="p-1 rounded text-center bg-purple-100 text-purple-700 font-medium"
-                    style={{ fontSize: '8px' }}>
-                    ○ {act.name}
+                {recurringActivities.map((act) => (
+                  <div key={act.id} className="p-1 rounded text-center text-white font-medium"
+                    style={{ backgroundColor: 'var(--color-primary)', fontSize: '8px' }}>
+                    🎯 {act.name}
                   </div>
                 ))}
 

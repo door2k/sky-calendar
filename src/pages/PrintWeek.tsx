@@ -259,7 +259,7 @@ export function PrintWeek() {
                   {renderPersonPrint(day?.pickup_person_id, 'sm')}
                 </div>
 
-                {/* After-Gan Activity */}
+                {/* After-Gan Activities (assigned + recurring, same style) */}
                 {activity && (
                   <div className="p-1.5 rounded-lg text-center font-medium text-xs"
                     style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
@@ -269,11 +269,10 @@ export function PrintWeek() {
                     )}
                   </div>
                 )}
-
-                {/* Recurring Activities */}
                 {recurringActivities.map((act) => (
-                  <div key={act.id} className="p-1.5 rounded-lg text-center font-medium bg-purple-100 text-purple-700 text-xs">
-                    ○ {act.name}
+                  <div key={act.id} className="p-1.5 rounded-lg text-center font-medium text-xs"
+                    style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
+                    🎯 {act.name}
                     {act.default_time && (
                       <div className="text-xs opacity-80">{act.default_time}</div>
                     )}
