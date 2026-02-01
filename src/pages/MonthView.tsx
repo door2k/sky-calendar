@@ -33,7 +33,7 @@ export function MonthView() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isViewMode = searchParams.has('view');
-  const { t } = useI18n();
+  const { t, translateActivity, translateReason } = useI18n();
   const formatDate = useFormatDate();
 
   const WEEKDAYS_I18N = [t('sun'), t('mon'), t('tue'), t('wed'), t('thu'), t('fri'), t('sat')];
@@ -228,7 +228,7 @@ export function MonthView() {
                         <>{t('no_gan')}</>
                       )}
                       {schedule?.no_gan_reason && (
-                        <div className="font-normal">{schedule.no_gan_reason}</div>
+                        <div className="font-normal">{translateReason(schedule.no_gan_reason)}</div>
                       )}
                     </div>
                   )}
@@ -236,7 +236,7 @@ export function MonthView() {
                   {/* Gan Activity (only show on weekdays that have gan) */}
                   {!isSaturdayLike && !isNoGan && schedule?.gan_activity && (
                     <div className="text-xs mt-1 truncate">
-                      <span className="text-green-700">🏫 {schedule.gan_activity}</span>
+                      <span className="text-green-700">🏫 {translateActivity(schedule.gan_activity)}</span>
                     </div>
                   )}
 
@@ -253,7 +253,7 @@ export function MonthView() {
                         }}
                       >
                         <span className="text-blue-600 hover:underline cursor-pointer">
-                          🎯 {getActivityById(schedule.after_gan_activity_id)?.name}
+                          🎯 {translateActivity(getActivityById(schedule.after_gan_activity_id)?.name || '')}
                         </span>
                       </div>
                     )}
@@ -271,7 +271,7 @@ export function MonthView() {
                           }}
                         >
                           <span className="text-purple-600 hover:underline cursor-pointer">
-                            ○ {activity.name}
+                            ○ {translateActivity(activity.name)}
                           </span>
                         </div>
                       ))}
@@ -289,7 +289,7 @@ export function MonthView() {
                           }}
                         >
                           <span className="text-blue-600 hover:underline cursor-pointer">
-                            🎯 {act.custom_name || activity?.name}
+                            🎯 {translateActivity(act.custom_name || activity?.name || '')}
                           </span>
                         </div>
                       );

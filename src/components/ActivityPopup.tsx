@@ -9,7 +9,7 @@ interface ActivityPopupProps {
 }
 
 export function ActivityPopup({ activity, onClose }: ActivityPopupProps) {
-  const { t } = useI18n();
+  const { t, translateActivity, translateDayName } = useI18n();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(activity.name);
   const [address, setAddress] = useState(activity.address || '');
@@ -61,7 +61,7 @@ export function ActivityPopup({ activity, onClose }: ActivityPopupProps) {
               className="text-xl font-bold border rounded px-2 py-1 w-full mr-2"
             />
           ) : (
-            <h2 className="text-xl font-bold">{name}</h2>
+            <h2 className="text-xl font-bold">{translateActivity(name)}</h2>
           )}
           <button
             onClick={onClose}
@@ -176,7 +176,7 @@ export function ActivityPopup({ activity, onClose }: ActivityPopupProps) {
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <span>🔄</span>
               <span>
-                {t('every')} {activity.recurrence_day}
+                {t('every')} {translateDayName(activity.recurrence_day)}
                 {activity.default_time && ` ${t('at')} ${activity.default_time}`}
               </span>
             </div>

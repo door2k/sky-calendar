@@ -392,6 +392,48 @@ const REASON_MAP_EN_TO_HE: Record<string, string> = {
   'Other': 'אחר',
 };
 
+// Activity name translation map (English → Hebrew)
+const ACTIVITY_MAP_HE: Record<string, string> = {
+  'Music': 'מוזיקה',
+  'Art': 'אומנות',
+  'Sports': 'ספורט',
+  'Hip Hop': 'היפ הופ',
+  'Swimming': 'שחייה',
+  'Ballet': 'בלט',
+  'Gymnastics': 'התעמלות',
+  'Soccer': 'כדורגל',
+  'Tennis': 'טניס',
+  'Yoga': 'יוגה',
+  'Drama': 'דרמה',
+  'Dance': 'ריקוד',
+  'Cooking': 'בישול',
+  'Karate': 'קראטה',
+  'Judo': 'ג׳ודו',
+  'Basketball': 'כדורסל',
+  'Piano': 'פסנתר',
+  'Guitar': 'גיטרה',
+  'Painting': 'ציור',
+  'Chess': 'שחמט',
+};
+
+// Day name translation map (for recurrence_day display)
+const DAY_NAME_MAP_HE: Record<string, string> = {
+  'sunday': 'ראשון',
+  'monday': 'שני',
+  'tuesday': 'שלישי',
+  'wednesday': 'רביעי',
+  'thursday': 'חמישי',
+  'friday': 'שישי',
+  'saturday': 'שבת',
+  'Sunday': 'ראשון',
+  'Monday': 'שני',
+  'Tuesday': 'שלישי',
+  'Wednesday': 'רביעי',
+  'Thursday': 'חמישי',
+  'Friday': 'שישי',
+  'Saturday': 'שבת',
+};
+
 export type TranslationKey = keyof typeof translations.en;
 
 interface I18nContextType {
@@ -402,6 +444,8 @@ interface I18nContextType {
   translateName: (name: string) => string;
   translateRole: (role: string) => string;
   translateReason: (reason: string) => string;
+  translateActivity: (name: string) => string;
+  translateDayName: (day: string) => string;
 }
 
 const I18nContext = createContext<I18nContextType | null>(null);
@@ -440,6 +484,16 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     return REASON_MAP_EN_TO_HE[reason] || reason;
   }, [lang]);
 
+  const translateActivity = useCallback((name: string): string => {
+    if (lang === 'en') return name;
+    return ACTIVITY_MAP_HE[name] || name;
+  }, [lang]);
+
+  const translateDayName = useCallback((day: string): string => {
+    if (lang === 'en') return day;
+    return DAY_NAME_MAP_HE[day] || day;
+  }, [lang]);
+
   // Set document direction
   useEffect(() => {
     document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
@@ -447,7 +501,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   }, [lang, isRTL]);
 
   return (
-    <I18nContext.Provider value={{ lang, setLang, t, isRTL, translateName, translateRole, translateReason }}>
+    <I18nContext.Provider value={{ lang, setLang, t, isRTL, translateName, translateRole, translateReason, translateActivity, translateDayName }}>
       {children}
     </I18nContext.Provider>
   );

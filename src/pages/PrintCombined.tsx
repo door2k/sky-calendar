@@ -57,7 +57,7 @@ export function PrintCombined() {
   const { data: weekData } = useWeekSchedule(weekStart);
   const { data: monthData } = useMonthSchedule(year, monthNum);
 
-  const { t, translateName } = useI18n();
+  const { t, translateName, translateActivity } = useI18n();
   const formatDate = useFormatDate();
   const themeEmoji = currentTheme?.emoji || '✨';
 
@@ -279,7 +279,7 @@ export function PrintCombined() {
                 {!isNoGan && day?.gan_activity && (
                   <div className="p-1 rounded text-center bg-green-100 text-green-700 font-medium"
                     style={{ fontSize: '7px' }}>
-                    🏫 {day.gan_activity}
+                    🏫 {translateActivity(day.gan_activity)}
                   </div>
                 )}
 
@@ -292,13 +292,13 @@ export function PrintCombined() {
                 {activity && (
                   <div className="p-1 rounded text-center text-white font-medium"
                     style={{ backgroundColor: 'var(--color-primary)', fontSize: '8px' }}>
-                    🎯 {activity.name}
+                    🎯 {translateActivity(activity.name)}
                   </div>
                 )}
                 {recurringActivities.map((act) => (
                   <div key={act.id} className="p-1 rounded text-center text-white font-medium"
                     style={{ backgroundColor: 'var(--color-primary)', fontSize: '8px' }}>
-                    🎯 {act.name}
+                    🎯 {translateActivity(act.name)}
                   </div>
                 ))}
 
@@ -331,7 +331,7 @@ export function PrintCombined() {
               const activity = getActivity(act.activity_id);
               return (
                 <div key={idx} className="bg-white/80 rounded-lg px-3 py-1.5 text-center shadow text-sm">
-                  <span className="font-bold text-purple-800">{act.custom_name || activity?.name}</span>
+                  <span className="font-bold text-purple-800">{translateActivity(act.custom_name || activity?.name || '')}</span>
                   {act.time && <span className="text-purple-600 ml-1">@ {act.time}</span>}
                 </div>
               );
@@ -410,7 +410,7 @@ export function PrintCombined() {
                     className="mt-0.5 px-1 rounded text-white truncate"
                     style={{ fontSize: '8px', backgroundColor: 'var(--color-primary)' }}
                   >
-                    {getActivity(schedule.after_gan_activity_id)?.name}
+                    {translateActivity(getActivity(schedule.after_gan_activity_id)?.name || '')}
                   </div>
                 )}
 
@@ -420,7 +420,7 @@ export function PrintCombined() {
                     className="mt-0.5 px-1 rounded bg-purple-500 text-white truncate"
                     style={{ fontSize: '8px' }}
                   >
-                    {act.custom_name || getActivity(act.activity_id)?.name}
+                    {translateActivity(act.custom_name || getActivity(act.activity_id)?.name || '')}
                   </div>
                 ))}
               </div>
@@ -442,7 +442,7 @@ export function PrintCombined() {
                 className="p-2 rounded-lg bg-white shadow text-sm border-l-3"
                 style={{ borderLeftWidth: '3px', borderColor: 'var(--color-primary)' }}
               >
-                <div className="font-bold">{activity.name}</div>
+                <div className="font-bold">{translateActivity(activity.name)}</div>
                 <div className="text-gray-600" style={{ fontSize: '10px' }}>
                   {days.join(', ')} {time && `@ ${time}`}
                 </div>

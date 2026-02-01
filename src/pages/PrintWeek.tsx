@@ -37,7 +37,7 @@ export function PrintWeek() {
   const { data: people = [] } = usePeople();
   const { data: activities = [] } = useActivities();
   const { data: weekData } = useWeekSchedule(weekStart);
-  const { t, translateName } = useI18n();
+  const { t, translateName, translateActivity, translateReason } = useI18n();
   const formatDate = useFormatDate();
 
   const themeEmoji = currentTheme?.emoji || '✨';
@@ -119,12 +119,12 @@ export function PrintWeek() {
         if (activity) {
           const existing = activityMap.get(activity.id);
           if (existing) {
-            existing.days.push(format(date, 'EEE'));
+            existing.days.push(formatDate(date, 'EEE'));
             if (day.after_gan_time) existing.time = day.after_gan_time;
           } else {
             activityMap.set(activity.id, {
               activity,
-              days: [format(date, 'EEE')],
+              days: [formatDate(date, 'EEE')],
               time: day.after_gan_time || activity.default_time,
             });
           }
@@ -137,13 +137,13 @@ export function PrintWeek() {
         if (activity.id !== day?.after_gan_activity_id) {
           const existing = activityMap.get(activity.id);
           if (existing) {
-            if (!existing.days.includes(format(date, 'EEE'))) {
-              existing.days.push(format(date, 'EEE'));
+            if (!existing.days.includes(formatDate(date, 'EEE'))) {
+              existing.days.push(formatDate(date, 'EEE'));
             }
           } else {
             activityMap.set(activity.id, {
               activity,
-              days: [format(date, 'EEE')],
+              days: [formatDate(date, 'EEE')],
               time: activity.default_time,
             });
           }
@@ -236,7 +236,7 @@ export function PrintWeek() {
                   {isLastFriday ? (
                     <div className="text-xs font-normal">{t('last_friday_of_month')}</div>
                   ) : day?.no_gan_reason ? (
-                    <div className="text-xs font-normal">{day.no_gan_reason}</div>
+                    <div className="text-xs font-normal">{translateReason(day.no_gan_reason)}</div>
                   ) : null}
                 </div>
               )}
@@ -252,7 +252,7 @@ export function PrintWeek() {
                 {/* Gan Activity - between drop-off and pickup */}
                 {!isNoGan && day?.gan_activity && (
                   <div className="text-center py-1 bg-green-100 rounded-lg text-green-700 font-medium text-xs">
-                    🏫 {day.gan_activity}
+                    🏫 {translateActivity(day.gan_activity)}
                   </div>
                 )}
 
@@ -266,7 +266,7 @@ export function PrintWeek() {
                 {activity && (
                   <div className="p-1.5 rounded-lg text-center font-medium text-xs"
                     style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
-                    🎯 {activity.name}
+                    🎯 {translateActivity(activity.name)}
                     {day?.after_gan_time && (
                       <div className="text-xs opacity-80">{day.after_gan_time}</div>
                     )}
@@ -275,7 +275,7 @@ export function PrintWeek() {
                 {recurringActivities.map((act) => (
                   <div key={act.id} className="p-1.5 rounded-lg text-center font-medium text-xs"
                     style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
-                    🎯 {act.name}
+                    🎯 {translateActivity(act.name)}
                     {act.default_time && (
                       <div className="text-xs opacity-80">{act.default_time}</div>
                     )}
@@ -326,7 +326,7 @@ export function PrintWeek() {
                 return (
                   <div key={idx} className="bg-white/80 rounded-xl p-3 text-center shadow">
                     <span className="text-2xl">🎯</span>
-                    <div className="font-bold text-purple-800">{act.custom_name || activity?.name}</div>
+                    <div className="font-bold text-purple-800">{translateActivity(act.custom_name || activity?.name || '')}</div>
                     {act.time && <div className="text-sm text-purple-600">{act.time}</div>}
                   </div>
                 );
@@ -363,7 +363,7 @@ export function PrintWeek() {
                   className="p-3 rounded-xl bg-white shadow border-l-4"
                   style={{ borderColor: 'var(--color-primary)' }}
                 >
-                  <div className="font-bold text-lg">{activity.name}</div>
+                  <div className="font-bold text-lg">{translateActivity(activity.name)}</div>
                   <div className="text-sm text-gray-600 flex items-center gap-1">
                     <span>📅</span> {days.join(', ')} {time && `@ ${time}`}
                   </div>

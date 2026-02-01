@@ -33,7 +33,7 @@ export function DayCard({
   lastFridaySchedule,
   readOnly = false,
 }: DayCardProps) {
-  const { t, translateName } = useI18n();
+  const { t, translateName, translateActivity, translateReason } = useI18n();
   const formatDate = useFormatDate();
   const dayName = formatDate(date, 'EEEE').toUpperCase();
   const dayNumber = format(date, 'd');
@@ -107,7 +107,7 @@ export function DayCard({
                 >
                   <span>🎯</span>
                   <span className={activity ? 'cursor-pointer hover:underline' : ''}>
-                    {act.custom_name || activity?.name || t('activity')}
+                    {act.custom_name ? translateActivity(act.custom_name) : activity?.name ? translateActivity(activity.name) : t('activity')}
                   </span>
                   {act.time && <span className="text-gray-600">— {act.time}</span>}
                 </div>
@@ -177,7 +177,7 @@ export function DayCard({
           <div className="font-bold">{dayName}</div>
           <div className="text-2xl">{dayNumber}</div>
           {isNoGan && schedule?.no_gan_reason && (
-            <div className="text-sm text-orange-700">{schedule.no_gan_reason}</div>
+            <div className="text-sm text-orange-700">{translateReason(schedule.no_gan_reason)}</div>
           )}
         </div>
 
@@ -195,7 +195,7 @@ export function DayCard({
             style={{ backgroundColor: isNoGan ? 'transparent' : 'var(--color-gan)' }}
           >
             <span>🏫</span>
-            <span>{schedule?.gan_activity || '—'}</span>
+            <span>{schedule?.gan_activity ? translateActivity(schedule.gan_activity) : '—'}</span>
           </div>
 
           <div
@@ -216,7 +216,7 @@ export function DayCard({
                   onActivityClick(afterGanActivity);
                 }}
               >
-                {afterGanActivity.name}
+                {translateActivity(afterGanActivity.name)}
                 {schedule?.after_gan_time && (
                   <span className="text-gray-500 ml-1">{schedule.after_gan_time}</span>
                 )}
@@ -241,7 +241,7 @@ export function DayCard({
               >
                 <span className="text-purple-600">○</span>
                 <span className="cursor-pointer hover:underline text-purple-700">
-                  {activity.name}
+                  {translateActivity(activity.name)}
                   {activity.default_time && (
                     <span className="text-purple-500 ml-1">{activity.default_time}</span>
                   )}

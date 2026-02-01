@@ -51,7 +51,7 @@ export function PrintMonth() {
 
   const { data: activities = [] } = useActivities();
   const { data: monthData } = useMonthSchedule(year, monthNum);
-  const { t } = useI18n();
+  const { t, translateActivity, translateReason, translateDayName } = useI18n();
   const formatDate = useFormatDate();
 
   const themeEmoji = currentTheme?.emoji || '✨';
@@ -260,7 +260,7 @@ export function PrintMonth() {
                 {/* No Gan Reason */}
                 {isNoGan && !isLastFri && schedule?.no_gan_reason && isCurrentMonth && (
                   <div className="text-xs text-orange-600 mt-0.5 truncate">
-                    {schedule.no_gan_reason}
+                    {translateReason(schedule.no_gan_reason)}
                   </div>
                 )}
 
@@ -273,7 +273,7 @@ export function PrintMonth() {
                         className="text-xs px-1.5 py-0.5 rounded-full truncate text-white font-medium"
                         style={{ backgroundColor: 'var(--color-primary)' }}
                       >
-                        🎯 {assignedActivity.name}
+                        🎯 {translateActivity(assignedActivity.name)}
                       </div>
                     )}
 
@@ -283,7 +283,7 @@ export function PrintMonth() {
                         key={activity.id}
                         className="text-xs px-1.5 py-0.5 rounded-full truncate bg-purple-200 text-purple-800 font-medium"
                       >
-                        ○ {activity.name}
+                        ○ {translateActivity(activity.name)}
                       </div>
                     ))}
 
@@ -296,7 +296,7 @@ export function PrintMonth() {
                             key={idx}
                             className="text-xs px-1.5 py-0.5 rounded-full truncate bg-purple-500 text-white font-medium"
                           >
-                            🎯 {act.custom_name || activity?.name}
+                            🎯 {translateActivity(act.custom_name || activity?.name || '')}
                           </div>
                         );
                       })}
@@ -349,11 +349,11 @@ export function PrintMonth() {
                   className="p-3 rounded-xl bg-white shadow border-l-4"
                   style={{ borderColor: 'var(--color-primary)' }}
                 >
-                  <div className="font-bold">{activity.name}</div>
+                  <div className="font-bold">{translateActivity(activity.name)}</div>
                   {activity.is_recurring && activity.recurrence_day && (
                     <div className="text-sm text-purple-600 flex items-center gap-1">
                       <span>🔄</span>
-                      {t('every')} {activity.recurrence_day}
+                      {t('every')} {translateDayName(activity.recurrence_day)}
                       {activity.default_time && ` @ ${activity.default_time}`}
                     </div>
                   )}
