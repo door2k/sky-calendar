@@ -59,7 +59,7 @@ export function ActivityPopup({ activity, onClose }: ActivityPopupProps) {
               className="text-xl font-bold border rounded px-2 py-1 w-full mr-2"
             />
           ) : (
-            <h2 className="text-xl font-bold">{activity.name}</h2>
+            <h2 className="text-xl font-bold">{name}</h2>
           )}
           <button
             onClick={onClose}
@@ -91,12 +91,12 @@ export function ActivityPopup({ activity, onClose }: ActivityPopupProps) {
                     className="border rounded px-2 py-1 w-full text-sm"
                   />
                 </div>
-              ) : activity.address ? (
+              ) : address ? (
                 <div>
-                  <div>{activity.address}</div>
-                  {activity.maps_url && (
+                  <div>{address}</div>
+                  {mapsUrl && (
                     <a
-                      href={activity.maps_url}
+                      href={mapsUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-600 hover:underline text-sm"
@@ -122,12 +122,12 @@ export function ActivityPopup({ activity, onClose }: ActivityPopupProps) {
                 placeholder="Contact phone"
                 className="border rounded px-2 py-1 flex-1 text-sm"
               />
-            ) : activity.contact_phone ? (
+            ) : contactPhone ? (
               <a
-                href={`tel:${activity.contact_phone}`}
+                href={`tel:${contactPhone}`}
                 className="text-blue-600 hover:underline"
               >
-                {activity.contact_phone}
+                {contactPhone}
               </a>
             ) : (
               <span className="text-gray-400 italic">No phone</span>
@@ -144,8 +144,8 @@ export function ActivityPopup({ activity, onClose }: ActivityPopupProps) {
                 onChange={(e) => setDefaultTime(e.target.value)}
                 className="border rounded px-2 py-1 text-sm"
               />
-            ) : activity.default_time ? (
-              <span>{activity.default_time}</span>
+            ) : defaultTime ? (
+              <span>{defaultTime}</span>
             ) : (
               <span className="text-gray-400 italic">No default time</span>
             )}
@@ -162,8 +162,8 @@ export function ActivityPopup({ activity, onClose }: ActivityPopupProps) {
                 rows={3}
                 className="border rounded px-2 py-1 flex-1 text-sm"
               />
-            ) : activity.note ? (
-              <div className="text-gray-700">{activity.note}</div>
+            ) : note ? (
+              <div className="text-gray-700">{note}</div>
             ) : (
               <span className="text-gray-400 italic">No notes</span>
             )}
