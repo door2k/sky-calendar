@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { format, isSaturday, isFriday } from 'date-fns';
 import { isLastFridayOfMonth } from '../lib/dateUtils';
+import { useI18n, useFormatDate } from '../lib/i18n';
 import type { DaySchedule, SaturdaySchedule, Person, Activity } from '../types';
 import { PersonAvatar } from './PersonAvatar';
 
@@ -83,6 +84,8 @@ function ActivityAutocomplete({
     }
   };
 
+  const { t } = useI18n();
+
   return (
     <div ref={wrapperRef} className="relative">
       <input
@@ -108,7 +111,7 @@ function ActivityAutocomplete({
         </ul>
       )}
       {text.trim() && !exactMatch && !showSuggestions && (
-        <div className="text-xs text-gray-500 mt-1">New activity "{text.trim()}" will be created on save</div>
+        <div className="text-xs text-gray-500 mt-1">{t('new_activity_created').replace('{name}', text.trim())}</div>
       )}
     </div>
   );
@@ -126,8 +129,6 @@ interface EditDayModalProps {
   onCreateActivity: (name: string) => Promise<Activity>;
 }
 
-const NO_GAN_REASONS = ['Holiday', 'Staff Training', 'Last Friday', 'Other'];
-
 export function EditDayModal({
   date,
   schedule,
@@ -139,6 +140,8 @@ export function EditDayModal({
   onClose,
   onCreateActivity,
 }: EditDayModalProps) {
+  const { t, translateName } = useI18n();
+  const formatDate = useFormatDate();
   const isSat = isSaturday(date);
   const isFri = isFriday(date);
   const isLastFri = isLastFridayOfMonth(date);
@@ -164,7 +167,6 @@ export function EditDayModal({
   const [satNotes, setSatNotes] = useState(satStyleSchedule?.notes || '');
 
   // Family dinner state (for Fridays)
-  // For regular Fridays, use schedule; for last Fridays, use satStyleSchedule
   const [familyDinnerPersonId, setFamilyDinnerPersonId] = useState(
     isLastFri ? (satStyleSchedule?.family_dinner_person_id || '') : (schedule?.family_dinner_person_id || '')
   );
@@ -179,6 +181,13 @@ export function EditDayModal({
 
   // Creator tracking state
   const [updatedBy, setUpdatedBy] = useState('');
+
+  const NO_GAN_REASONS = [
+    { value: 'Holiday', label: t('reason_holiday') },
+    { value: 'Staff Training', label: t('reason_staff_training') },
+    { value: 'Last Friday', label: t('reason_last_friday') },
+    { value: 'Other', label: t('reason_other') },
+  ];
 
   const handleSave = async () => {
     setSaving(true);
@@ -264,7 +273,7 @@ export function EditDayModal({
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-white">
           <h2 className="text-xl font-bold">
-            Edit {format(date, 'EEEE, MMM d')}
+            {t('edit')} {formatDate(date, 'EEEE, MMM d')}
           </h2>
           <button
             onClick={onClose}
@@ -279,11 +288,11 @@ export function EditDayModal({
             <>
               {isLastFri && (
                 <div className="bg-orange-100 text-orange-800 px-3 py-2 rounded-lg text-sm mb-2">
-                  Last Friday of the month - No Gan
+                  {t('last_friday_no_gan_long')}
                 </div>
               )}
               <div>
-                <label className="block text-sm font-medium mb-2">Activities</label>
+                <label className="block text-sm font-medium mb-2">{t('activities')}</label>
                 <div className="space-y-2">
                   {satActivities.map((act, idx) => (
                     <div key={idx} className="flex gap-2 items-center">
@@ -295,14 +304,14 @@ export function EditDayModal({
                             updateSaturdayActivity(idx, 'activity_id', id);
                             setPendingSatNames((prev) => ({ ...prev, [idx]: newName }));
                           }}
-                          placeholder="Type activity name..."
+                          placeholder={t('type_activity_name')}
                         />
                       </div>
                       <input
                         type="text"
                         value={act.time || ''}
                         onChange={(e) => updateSaturdayActivity(idx, 'time', e.target.value)}
-                        placeholder="Time"
+                        placeholder={t('dinner_time')}
                         className="w-24 border rounded-lg p-2"
                       />
                       <button
@@ -318,27 +327,27 @@ export function EditDayModal({
                   onClick={addSaturdayActivity}
                   className="mt-2 text-sm text-blue-600 hover:underline"
                 >
-                  + Add activity
+                  {t('add_activity')}
                 </button>
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Notes</label>
+                <label className="block text-sm font-medium mb-1">{t('notes')}</label>
                 <textarea
                   value={satNotes}
                   onChange={(e) => setSatNotes(e.target.value)}
                   className="w-full border rounded-lg p-2 h-20"
-                  placeholder="Any notes for this day..."
+                  placeholder={t('notes_placeholder')}
                 />
               </div>
 
               {/* Family Dinner for last Fridays */}
               {isLastFri && !isSat && (
                 <div className="border-t pt-4">
-                  <label className="block text-sm font-medium mb-2">🍽️ Family Dinner</label>
+                  <label className="block text-sm font-medium mb-2">🍽️ {t('family_dinner')}</label>
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-xs text-gray-500 mb-1">Who's hosting?</label>
+                      <label className="block text-xs text-gray-500 mb-1">{t('whos_hosting')}</label>
                       <div className="flex items-center gap-2">
                         {familyDinnerPersonId && getSelectedPerson(familyDinnerPersonId) && (
                           <PersonAvatar person={getSelectedPerson(familyDinnerPersonId)!} size="lg" showName={false} />
@@ -351,15 +360,15 @@ export function EditDayModal({
                           }}
                           className="flex-1 border rounded-lg p-2"
                         >
-                          <option value="">Select person...</option>
+                          <option value="">{t('select_person')}</option>
                           {people.map((p) => (
-                            <option key={p.id} value={p.id}>{p.name}</option>
+                            <option key={p.id} value={p.id}>{translateName(p.name)}</option>
                           ))}
                         </select>
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-500 mb-1">Dinner time</label>
+                      <label className="block text-xs text-gray-500 mb-1">{t('dinner_time')}</label>
                       <input
                         type="time"
                         value={familyDinnerTime}
@@ -374,7 +383,7 @@ export function EditDayModal({
           ) : (
             <>
               <div>
-                <label className="block text-sm font-medium mb-1">Drop-off</label>
+                <label className="block text-sm font-medium mb-1">{t('dropoff')}</label>
                 <div className="flex items-center gap-2">
                   {dropoffPersonId && getSelectedPerson(dropoffPersonId) && (
                     <PersonAvatar person={getSelectedPerson(dropoffPersonId)!} size="md" showName={false} />
@@ -384,27 +393,27 @@ export function EditDayModal({
                     onChange={(e) => setDropoffPersonId(e.target.value)}
                     className="flex-1 border rounded-lg p-2"
                   >
-                    <option value="">Select person...</option>
+                    <option value="">{t('select_person')}</option>
                     {people.map((p) => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
+                      <option key={p.id} value={p.id}>{translateName(p.name)}</option>
                     ))}
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Gan Activity</label>
+                <label className="block text-sm font-medium mb-1">{t('gan_activity')}</label>
                 <input
                   type="text"
                   value={ganActivity}
                   onChange={(e) => setGanActivity(e.target.value)}
                   className="w-full border rounded-lg p-2"
-                  placeholder="e.g., Music, Art, Sports"
+                  placeholder={t('gan_activity_placeholder')}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Pickup</label>
+                <label className="block text-sm font-medium mb-1">{t('pickup')}</label>
                 <div className="flex items-center gap-2">
                   {pickupPersonId && getSelectedPerson(pickupPersonId) && (
                     <PersonAvatar person={getSelectedPerson(pickupPersonId)!} size="md" showName={false} />
@@ -414,16 +423,16 @@ export function EditDayModal({
                     onChange={(e) => setPickupPersonId(e.target.value)}
                     className="flex-1 border rounded-lg p-2"
                   >
-                    <option value="">Select person...</option>
+                    <option value="">{t('select_person')}</option>
                     {people.map((p) => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
+                      <option key={p.id} value={p.id}>{translateName(p.name)}</option>
                     ))}
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">After-Gan Activity</label>
+                <label className="block text-sm font-medium mb-1">{t('after_gan_activity')}</label>
                 <ActivityAutocomplete
                   activities={activities}
                   value={afterGanActivityId}
@@ -431,7 +440,7 @@ export function EditDayModal({
                     setAfterGanActivityId(id);
                     setPendingAfterGanName(newName);
                   }}
-                  placeholder="Type activity name..."
+                  placeholder={t('type_activity_name')}
                 />
                 {(afterGanActivityId || pendingAfterGanName) && (
                   <input
@@ -439,13 +448,13 @@ export function EditDayModal({
                     value={afterGanTime}
                     onChange={(e) => setAfterGanTime(e.target.value)}
                     className="w-full border rounded-lg p-2 mt-2"
-                    placeholder="Time (e.g., 17:15)"
+                    placeholder={t('time_placeholder')}
                   />
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Bedtime</label>
+                <label className="block text-sm font-medium mb-1">{t('bedtime')}</label>
                 <div className="flex items-center gap-2">
                   {bedtimePersonId && getSelectedPerson(bedtimePersonId) && (
                     <PersonAvatar person={getSelectedPerson(bedtimePersonId)!} size="md" showName={false} />
@@ -455,9 +464,9 @@ export function EditDayModal({
                     onChange={(e) => setBedtimePersonId(e.target.value)}
                     className="flex-1 border rounded-lg p-2"
                   >
-                    <option value="">Select person...</option>
+                    <option value="">{t('select_person')}</option>
                     {people.map((p) => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
+                      <option key={p.id} value={p.id}>{translateName(p.name)}</option>
                     ))}
                   </select>
                 </div>
@@ -471,7 +480,7 @@ export function EditDayModal({
                     onChange={(e) => setIsNoGan(e.target.checked)}
                     className="rounded"
                   />
-                  <span className="font-medium">No Gan this day</span>
+                  <span className="font-medium">{t('no_gan_this_day')}</span>
                 </label>
                 {isNoGan && (
                   <select
@@ -479,31 +488,31 @@ export function EditDayModal({
                     onChange={(e) => setNoGanReason(e.target.value)}
                     className="w-full border rounded-lg p-2 mt-2"
                   >
-                    <option value="">Select reason...</option>
+                    <option value="">{t('select_reason')}</option>
                     {NO_GAN_REASONS.map((reason) => (
-                      <option key={reason} value={reason}>{reason}</option>
+                      <option key={reason.value} value={reason.value}>{reason.label}</option>
                     ))}
                   </select>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Notes</label>
+                <label className="block text-sm font-medium mb-1">{t('notes')}</label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   className="w-full border rounded-lg p-2 h-20"
-                  placeholder="Any notes for this day..."
+                  placeholder={t('notes_placeholder')}
                 />
               </div>
 
               {/* Family Dinner for regular Fridays */}
               {isFri && !isLastFri && (
                 <div className="border-t pt-4">
-                  <label className="block text-sm font-medium mb-2">🍽️ Family Dinner</label>
+                  <label className="block text-sm font-medium mb-2">🍽️ {t('family_dinner')}</label>
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-xs text-gray-500 mb-1">Who's hosting?</label>
+                      <label className="block text-xs text-gray-500 mb-1">{t('whos_hosting')}</label>
                       <div className="flex items-center gap-2">
                         {familyDinnerPersonId && getSelectedPerson(familyDinnerPersonId) && (
                           <PersonAvatar person={getSelectedPerson(familyDinnerPersonId)!} size="lg" showName={false} />
@@ -513,15 +522,15 @@ export function EditDayModal({
                           onChange={(e) => setFamilyDinnerPersonId(e.target.value)}
                           className="flex-1 border rounded-lg p-2"
                         >
-                          <option value="">Select person...</option>
+                          <option value="">{t('select_person')}</option>
                           {people.map((p) => (
-                            <option key={p.id} value={p.id}>{p.name}</option>
+                            <option key={p.id} value={p.id}>{translateName(p.name)}</option>
                           ))}
                         </select>
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-500 mb-1">Dinner time</label>
+                      <label className="block text-xs text-gray-500 mb-1">{t('dinner_time')}</label>
                       <input
                         type="time"
                         value={familyDinnerTime}
@@ -538,15 +547,15 @@ export function EditDayModal({
 
         <div className="p-4 border-t sticky bottom-0 bg-white space-y-3">
           <div>
-            <label className="block text-sm font-medium mb-1">Who's updating this?</label>
+            <label className="block text-sm font-medium mb-1">{t('whos_updating')}</label>
             <select
               value={updatedBy}
               onChange={(e) => setUpdatedBy(e.target.value)}
               className="w-full border rounded-lg p-2"
             >
-              <option value="">Select person (optional)...</option>
+              <option value="">{t('select_person_optional')}</option>
               {people.map((p) => (
-                <option key={p.id} value={p.name}>{p.name}</option>
+                <option key={p.id} value={p.name}>{translateName(p.name)}</option>
               ))}
             </select>
           </div>
@@ -555,7 +564,7 @@ export function EditDayModal({
               onClick={onClose}
               className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50"
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               onClick={handleSave}
@@ -563,7 +572,7 @@ export function EditDayModal({
               className="flex-1 px-4 py-2 rounded-lg text-white disabled:opacity-50"
               style={{ backgroundColor: 'var(--color-primary)' }}
             >
-              {saving ? 'Saving...' : 'Save'}
+              {saving ? t('saving') : t('save')}
             </button>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { format, isSaturday, isFriday, getDay } from 'date-fns';
 import { isLastFridayOfMonth } from '../lib/dateUtils';
+import { useI18n, useFormatDate } from '../lib/i18n';
 import type { DaySchedule, SaturdaySchedule, Person, Activity } from '../types';
 import { PersonAvatar } from './PersonAvatar';
 
@@ -32,7 +33,9 @@ export function DayCard({
   lastFridaySchedule,
   readOnly = false,
 }: DayCardProps) {
-  const dayName = format(date, 'EEEE').toUpperCase();
+  const { t, translateName } = useI18n();
+  const formatDate = useFormatDate();
+  const dayName = formatDate(date, 'EEEE').toUpperCase();
   const dayNumber = format(date, 'd');
   const isSat = isSaturday(date);
   const isFri = isFriday(date);
@@ -51,7 +54,7 @@ export function DayCard({
   const renderPerson = (id?: string) => {
     const person = getPerson(id);
     if (!person) return <span>—</span>;
-    return <PersonAvatar person={person} size="sm" />;
+    return <PersonAvatar person={person} size="sm" translateName={translateName} />;
   };
 
   const getActivity = (id?: string) => {
@@ -85,7 +88,7 @@ export function DayCard({
           {dayName} {dayNumber}
           {isLastFri && !isSat && (
             <span className="ml-2 text-sm font-normal text-orange-700 bg-orange-100 px-2 py-0.5 rounded">
-              Last Friday - No Gan
+              {t('last_friday_no_gan')}
             </span>
           )}
         </div>
@@ -104,7 +107,7 @@ export function DayCard({
                 >
                   <span>🎯</span>
                   <span className={activity ? 'cursor-pointer hover:underline' : ''}>
-                    {act.custom_name || activity?.name || 'Activity'}
+                    {act.custom_name || activity?.name || t('activity')}
                   </span>
                   {act.time && <span className="text-gray-600">— {act.time}</span>}
                 </div>
@@ -112,7 +115,7 @@ export function DayCard({
             })}
           </div>
         ) : (
-          <div className="text-gray-500 italic">No activities planned</div>
+          <div className="text-gray-500 italic">{t('no_activities_planned')}</div>
         )}
         {scheduleToUse?.notes && (
           <div className="mt-2 text-sm text-gray-600">{scheduleToUse.notes}</div>
@@ -123,7 +126,7 @@ export function DayCard({
             <div className="flex items-center gap-3">
               <span className="text-2xl">🍽️</span>
               <div className="flex flex-col">
-                <span className="text-sm font-medium text-gray-600">Family Dinner</span>
+                <span className="text-sm font-medium text-gray-600">{t('family_dinner')}</span>
                 <div className="flex items-center gap-2">
                   {scheduleToUse?.family_dinner_person_id ? (
                     <>
@@ -133,11 +136,11 @@ export function DayCard({
                         showName={false}
                       />
                       <span className="text-lg font-medium">
-                        {getPerson(scheduleToUse.family_dinner_person_id)?.name}
+                        {translateName(getPerson(scheduleToUse.family_dinner_person_id)?.name || '')}
                       </span>
                     </>
                   ) : (
-                    <span className="text-gray-400 italic">Not assigned</span>
+                    <span className="text-gray-400 italic">{t('not_assigned')}</span>
                   )}
                   {scheduleToUse?.family_dinner_time && (
                     <span className="text-gray-600 ml-2">
@@ -166,7 +169,7 @@ export function DayCard({
     >
       {isNoGan && (
         <div className="bg-orange-400 text-white text-center py-1 font-bold text-sm">
-          NO GAN
+          {t('no_gan')}
         </div>
       )}
       <div className="p-3">
@@ -258,7 +261,7 @@ export function DayCard({
               <div className="flex items-center gap-2 p-2 rounded bg-amber-50">
                 <span>🍽️</span>
                 <div className="flex flex-col flex-1">
-                  <span className="text-xs text-gray-500">Family Dinner</span>
+                  <span className="text-xs text-gray-500">{t('family_dinner')}</span>
                   <div className="flex items-center gap-2">
                     {schedule?.family_dinner_person_id ? (
                       <>
@@ -268,7 +271,7 @@ export function DayCard({
                           showName={false}
                         />
                         <span className="font-medium">
-                          {getPerson(schedule.family_dinner_person_id)?.name}
+                          {translateName(getPerson(schedule.family_dinner_person_id)?.name || '')}
                         </span>
                       </>
                     ) : (

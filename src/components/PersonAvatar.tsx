@@ -5,9 +5,10 @@ interface PersonAvatarProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   showName?: boolean;
   printSize?: boolean; // 50% larger for print views
+  translateName?: (name: string) => string;
 }
 
-export function PersonAvatar({ person, size = 'sm', showName = true, printSize = false }: PersonAvatarProps) {
+export function PersonAvatar({ person, size = 'sm', showName = true, printSize = false, translateName }: PersonAvatarProps) {
   // Regular sizes
   const regularSizeClasses = {
     sm: 'w-6 h-6 text-xs',
@@ -25,6 +26,7 @@ export function PersonAvatar({ person, size = 'sm', showName = true, printSize =
   };
 
   const sizeClasses = printSize ? printSizeClasses : regularSizeClasses;
+  const displayName = translateName ? translateName(person.name) : person.name;
 
   const hasAvatar = person.avatar_url;
   const hasSecondAvatar = person.avatar_url_2;
@@ -46,7 +48,7 @@ export function PersonAvatar({ person, size = 'sm', showName = true, printSize =
             className={`${sizeClasses[size]} rounded-full object-cover border-2 border-white`}
           />
         </div>
-        {showName && <span>{person.name}</span>}
+        {showName && <span>{displayName}</span>}
       </div>
     );
   }
@@ -60,11 +62,11 @@ export function PersonAvatar({ person, size = 'sm', showName = true, printSize =
           alt=""
           className={`${sizeClasses[size]} rounded-full object-cover`}
         />
-        {showName && <span>{person.name}</span>}
+        {showName && <span>{displayName}</span>}
       </div>
     );
   }
 
   // No avatar - just show name
-  return showName ? <span>{person.name}</span> : null;
+  return showName ? <span>{displayName}</span> : null;
 }

@@ -18,6 +18,7 @@ import { useActivities } from '../hooks/useActivities';
 import { useWeekSchedule, useMonthSchedule } from '../hooks/useSchedule';
 import { useTheme } from '../hooks/useTheme';
 import { PersonAvatar } from '../components/PersonAvatar';
+import { useI18n, useFormatDate } from '../lib/i18n';
 import type { Activity, SaturdayActivity, Person } from '../types';
 
 const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -56,6 +57,8 @@ export function PrintCombined() {
   const { data: weekData } = useWeekSchedule(weekStart);
   const { data: monthData } = useMonthSchedule(year, monthNum);
 
+  const { t, translateName } = useI18n();
+  const formatDate = useFormatDate();
   const themeEmoji = currentTheme?.emoji || '✨';
 
   const weekDates = useMemo(() => {
@@ -88,8 +91,8 @@ export function PrintCombined() {
     if (!person) return <span className="text-gray-400" style={{ fontSize: '8px' }}>—</span>;
     return (
       <div className="flex flex-col items-center">
-        <PersonAvatar person={person} size="sm" showName={false} printSize />
-        <span className="leading-tight text-center mt-0.5" style={{ fontSize: '8px' }}>{person.name}</span>
+        <PersonAvatar person={person} size="sm" showName={false} printSize translateName={translateName} />
+        <span className="leading-tight text-center mt-0.5" style={{ fontSize: '8px' }}>{translateName(person.name)}</span>
       </div>
     );
   };
@@ -130,12 +133,12 @@ export function PrintCombined() {
         if (activity) {
           const existing = activityMap.get(activity.id);
           if (existing) {
-            existing.days.push(format(date, 'EEE'));
+            existing.days.push(formatDate(date, 'EEE'));
             if (day.after_gan_time) existing.time = day.after_gan_time;
           } else {
             activityMap.set(activity.id, {
               activity,
-              days: [format(date, 'EEE')],
+              days: [formatDate(date, 'EEE')],
               time: day.after_gan_time || activity.default_time,
             });
           }
@@ -148,13 +151,13 @@ export function PrintCombined() {
         if (activity.id !== day?.after_gan_activity_id) {
           const existing = activityMap.get(activity.id);
           if (existing) {
-            if (!existing.days.includes(format(date, 'EEE'))) {
-              existing.days.push(format(date, 'EEE'));
+            if (!existing.days.includes(formatDate(date, 'EEE'))) {
+              existing.days.push(formatDate(date, 'EEE'));
             }
           } else {
             activityMap.set(activity.id, {
               activity,
-              days: [format(date, 'EEE')],
+              days: [formatDate(date, 'EEE')],
               time: activity.default_time,
             });
           }
@@ -163,7 +166,7 @@ export function PrintCombined() {
     });
 
     return Array.from(activityMap.values());
-  }, [weekData, activities, weekDates]);
+  }, [weekData, activities, weekDates, formatDate]);
 
   // Auto-print on load - wait for images to load first
   useEffect(() => {
@@ -193,7 +196,7 @@ export function PrintCombined() {
   }, [weekData, monthData]);
 
   const weekEndDate = addDays(weekStart, 6);
-  const WEEKDAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+  const WEEKDAYS = [t('sun'), t('mon'), t('tue'), t('wed'), t('thu'), t('fri'), t('sat')];
 
   return (
     <div className="p-3 max-w-4xl mx-auto bg-white print:p-2">
@@ -202,7 +205,7 @@ export function PrintCombined() {
         onClick={() => navigate(-1)}
         className="mb-3 px-4 py-2 border rounded no-print hover:bg-gray-50"
       >
-        ← Back
+        {t('back')}
       </button>
 
       {/* Fun Header */}
@@ -217,9 +220,9 @@ export function PrintCombined() {
           <div className="text-3xl mb-1">
             {themeEmoji} {themeEmoji} {themeEmoji}
           </div>
-          <h1 className="text-3xl font-black">SKY'S SCHEDULE</h1>
+          <h1 className="text-3xl font-black">{t('skys_schedule')}</h1>
           <p className="text-lg opacity-90">
-            Week of {format(weekStart, 'MMMM d')} - {format(weekEndDate, 'd, yyyy')}
+            {t('week_of')} {formatDate(weekStart, 'MMMM d')} - {formatDate(weekEndDate, 'd, yyyy')}
           </p>
         </div>
         <div className="absolute -top-1 -left-1 text-2xl">⭐</div>
@@ -255,13 +258,13 @@ export function PrintCombined() {
                 style={{ backgroundColor: vibe.color }}
               >
                 <span className="text-lg">{vibe.emoji}</span>
-                <div style={{ fontSize: '10px' }}>{format(date, 'EEE').toUpperCase()}</div>
-                <div className="text-lg font-black leading-tight">{format(date, 'd')}</div>
+                <div style={{ fontSize: '10px' }}>{WEEKDAYS[idx]}</div>
+                <div className="text-lg font-black leading-tight">{formatDate(date, 'd')}</div>
               </div>
 
               {isNoGan && (
                 <div className="bg-orange-500 text-white text-center py-0.5 font-bold" style={{ fontSize: '9px' }}>
-                  🏠 {isLastFriday ? 'LAST FRI' : 'NO GAN'}
+                  🏠 {isLastFriday ? t('last_fri_short') : t('no_gan_short')}
                 </div>
               )}
 
@@ -318,7 +321,7 @@ export function PrintCombined() {
         <div className="flex items-center justify-center gap-2 mb-2">
           <span className="text-2xl">🌸</span>
           <span className="text-xl font-black text-purple-800">
-            SATURDAY {format(weekDates[6], 'd')}
+            {t('saturday').toUpperCase()} {formatDate(weekDates[6], 'd')}
           </span>
           <span className="text-2xl">🌸</span>
         </div>
@@ -335,7 +338,7 @@ export function PrintCombined() {
             })}
           </div>
         ) : (
-          <div className="text-center text-purple-700">😴 Rest day!</div>
+          <div className="text-center text-purple-700">😴 {t('rest_day')}</div>
         )}
       </div>
 
@@ -343,7 +346,7 @@ export function PrintCombined() {
       <div className="rounded-xl overflow-hidden shadow mb-3">
         <div className="text-center py-2 font-bold text-lg"
           style={{ backgroundColor: 'var(--color-secondary)' }}>
-          📅 {format(currentMonth, 'MMMM yyyy')}
+          📅 {formatDate(currentMonth, 'MMMM yyyy')}
         </div>
 
         {/* Weekday headers */}
@@ -430,7 +433,7 @@ export function PrintCombined() {
       {weekActivities.length > 0 && (
         <div className="rounded-xl p-3 shadow" style={{ backgroundColor: 'var(--color-background)' }}>
           <div className="font-bold mb-2 flex items-center gap-1">
-            <span>📍</span> Where to go:
+            <span>📍</span> {t('where_to_go')}
           </div>
           <div className="grid grid-cols-2 gap-2">
             {weekActivities.map(({ activity, days, time }) => (
@@ -456,7 +459,7 @@ export function PrintCombined() {
 
       {/* Footer */}
       <div className="text-center mt-4 text-gray-400" style={{ fontSize: '10px' }}>
-        Made with 💜 for Sky
+        {t('made_with_love')}
       </div>
     </div>
   );

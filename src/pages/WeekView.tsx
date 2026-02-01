@@ -11,6 +11,7 @@ import { useTheme } from '../hooks/useTheme';
 import { usePeople } from '../hooks/usePeople';
 import { useActivities, useCreateActivity } from '../hooks/useActivities';
 import { useWeekSchedule, useUpdateDaySchedule, useUpdateSaturdaySchedule } from '../hooks/useSchedule';
+import { useI18n, useFormatDate, LanguageToggle } from '../lib/i18n';
 import type { Activity, DaySchedule, SaturdaySchedule } from '../types';
 
 export function WeekView() {
@@ -19,6 +20,8 @@ export function WeekView() {
   const [searchParams] = useSearchParams();
   const isViewMode = searchParams.has('view');
   const [weekOffset, setWeekOffset] = useState(0);
+  const { t } = useI18n();
+  const formatDate = useFormatDate();
 
   // If date param exists (from bookmark/direct link), calculate initial offset
   const initialWeekStart = useMemo(() => {
@@ -73,7 +76,6 @@ export function WeekView() {
 
   const handlePrevWeek = () => {
     if (date) {
-      // If we have a date param (from bookmark), navigate away to use state-based nav
       navigate('/week');
       setWeekOffset(effectiveOffset - 1);
     } else {
@@ -83,7 +85,6 @@ export function WeekView() {
 
   const handleNextWeek = () => {
     if (date) {
-      // If we have a date param (from bookmark), navigate away to use state-based nav
       navigate('/week');
       setWeekOffset(effectiveOffset + 1);
     } else {
@@ -122,14 +123,15 @@ export function WeekView() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold">Sky's Week</h1>
+            <h1 className="text-2xl md:text-3xl font-bold">{t('skys_week')}</h1>
             <p className="text-gray-600">
-              {format(weekStart, 'MMM d')} - {format(weekEndDate, 'MMM d, yyyy')}
+              {formatDate(weekStart, 'MMM d')} - {formatDate(weekEndDate, 'MMM d, yyyy')}
             </p>
           </div>
           <div className="flex items-center gap-4">
+            <LanguageToggle />
             <div className="px-3 py-1.5 rounded-full text-sm font-medium" style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
-              Today: {format(new Date(), 'EEEE, MMM d')}
+              {t('today')}: {formatDate(new Date(), 'EEEE, MMM d')}
             </div>
             {!isViewMode && <ThemePicker currentTheme={currentTheme} onSelectTheme={selectTheme} />}
           </div>
@@ -179,7 +181,7 @@ export function WeekView() {
             onClick={handlePrevWeek}
             className="w-full sm:w-auto px-4 py-2 rounded-lg border hover:bg-gray-50"
           >
-            Previous Week
+            {t('previous_week')}
           </button>
           <div className="flex flex-wrap justify-center gap-2">
             {!isCurrentWeek && (
@@ -188,31 +190,31 @@ export function WeekView() {
                 className="px-4 py-2 rounded-lg border hover:bg-gray-50 font-medium"
                 style={{ backgroundColor: 'var(--color-primary)', color: 'white', border: 'none' }}
               >
-                This Week
+                {t('this_week')}
               </button>
             )}
             <Link
               to={`/month/${format(weekStart, 'yyyy-MM')}${isViewMode ? '?view' : ''}`}
               className="px-4 py-2 rounded-lg border hover:bg-gray-50"
             >
-              Month View
+              {t('month_view')}
             </Link>
             <div className="relative group">
               <button className="px-4 py-2 rounded-lg border hover:bg-gray-50">
-                Print ▾
+                {t('print_dropdown')}
               </button>
               <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 sm:bottom-auto sm:top-full sm:mt-1 sm:right-0 sm:left-auto sm:translate-x-0 bg-white border rounded-lg shadow-lg hidden group-hover:block z-10 min-w-32">
                 <button
                   onClick={handlePrint}
                   className="block w-full px-4 py-2 text-left hover:bg-gray-50 text-sm"
                 >
-                  Week Only
+                  {t('week_only')}
                 </button>
                 <button
                   onClick={handlePrintCombined}
                   className="block w-full px-4 py-2 text-left hover:bg-gray-50 text-sm"
                 >
-                  Week + Month
+                  {t('week_plus_month')}
                 </button>
               </div>
             </div>
@@ -221,7 +223,7 @@ export function WeekView() {
             onClick={handleNextWeek}
             className="w-full sm:w-auto px-4 py-2 rounded-lg border hover:bg-gray-50"
           >
-            Next Week
+            {t('next_week')}
           </button>
         </div>
       </div>

@@ -1,6 +1,6 @@
 # Sky's Schedule Calendar - Project Brain
 
-> **Last Updated:** 2026-01-25
+> **Last Updated:** 2026-01-28
 > **Status:** Active Development
 > **Live URL:** https://sky-calendar.vercel.app
 
@@ -256,11 +256,15 @@ npx vercel logs sky-calendar.vercel.app --since 5m
 
 ## Changelog
 
-### 2026-01-25 (Latest Session)
-- **Fixed print view data mismatch bugs**:
-  - PrintWeek.tsx and PrintCombined.tsx now correctly handle "last Friday of month" as no-gan day
-  - Family dinner data now correctly sourced from `saturday_schedules` table for last Fridays
-  - Added "Last Friday of the Month!" label in no-gan banner
+### 2026-01-28 (Latest Session)
+- **Major print view redesign** (`PrintWeek.tsx`, `PrintCombined.tsx`):
+  - Fixed image loading: now waits for all images to load before triggering print dialog
+  - Fixed data mismatch: last Friday correctly shows as no-gan and sources family dinner from `saturday_schedules`
+  - New layout: picture centered, name below (vertical stacking)
+  - Removed emoji icons (🌅🌆🌙) for cleaner look
+  - Gan activity now displays between drop-off and pickup (correct order)
+  - Removed bedtime from print views (unused field)
+  - Removed labels - order makes the meaning clear
 - **Updated backlog**: Marked AI assistant in monthly view, voice input, and print redesign as completed
 
 ### 2026-01-22

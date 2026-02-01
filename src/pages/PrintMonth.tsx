@@ -16,6 +16,7 @@ import { isLastFridayOfMonth } from '../lib/dateUtils';
 import { useActivities } from '../hooks/useActivities';
 import { useMonthSchedule } from '../hooks/useSchedule';
 import { useTheme } from '../hooks/useTheme';
+import { useI18n, useFormatDate } from '../lib/i18n';
 import type { Activity, SaturdayActivity } from '../types';
 
 const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -50,6 +51,8 @@ export function PrintMonth() {
 
   const { data: activities = [] } = useActivities();
   const { data: monthData } = useMonthSchedule(year, monthNum);
+  const { t } = useI18n();
+  const formatDate = useFormatDate();
 
   const themeEmoji = currentTheme?.emoji || '✨';
 
@@ -129,7 +132,7 @@ export function PrintMonth() {
     return () => clearTimeout(timer);
   }, [monthData]);
 
-  const WEEKDAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+  const WEEKDAYS = [t('sun'), t('mon'), t('tue'), t('wed'), t('thu'), t('fri'), t('sat')];
 
   return (
     <div className="p-4 max-w-4xl mx-auto bg-white print:p-2">
@@ -138,7 +141,7 @@ export function PrintMonth() {
         onClick={() => navigate(-1)}
         className="mb-4 px-4 py-2 border rounded no-print hover:bg-gray-50"
       >
-        ← Back
+        {t('back')}
       </button>
 
       {/* Fun Header */}
@@ -154,10 +157,10 @@ export function PrintMonth() {
             {themeEmoji} {themeEmoji} {themeEmoji}
           </div>
           <h1 className="text-4xl font-black tracking-wide">
-            SKY'S ADVENTURE MONTH!
+            {t('skys_adventure_month')}
           </h1>
           <p className="text-2xl mt-2 font-bold opacity-90">
-            {format(currentMonth, 'MMMM yyyy').toUpperCase()}
+            {formatDate(currentMonth, 'MMMM yyyy').toUpperCase()}
           </p>
           <div className="text-4xl mt-2">
             {themeEmoji} {themeEmoji} {themeEmoji}
@@ -250,7 +253,7 @@ export function PrintMonth() {
                 {/* Last Friday Badge */}
                 {isLastFri && isCurrentMonth && (
                   <div className="text-xs font-bold text-orange-600 mt-0.5">
-                    Last Friday!
+                    {t('last_friday_label')}
                   </div>
                 )}
 
@@ -312,21 +315,21 @@ export function PrintMonth() {
             className="w-4 h-4 rounded-full"
             style={{ backgroundColor: 'var(--color-primary)' }}
           />
-          <span className="text-sm font-medium">Activity</span>
+          <span className="text-sm font-medium">{t('activity')}</span>
         </div>
         <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white shadow">
           <span className="w-4 h-4 rounded-full bg-purple-200" />
-          <span className="text-sm font-medium">Recurring</span>
+          <span className="text-sm font-medium">{t('recurring')}</span>
         </div>
         <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white shadow">
           <span className="w-4 h-4 rounded-full bg-orange-500 flex items-center justify-center text-white text-xs">
             🏠
           </span>
-          <span className="text-sm font-medium">No Gan</span>
+          <span className="text-sm font-medium">{t('no_gan')}</span>
         </div>
         <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white shadow">
           <span className="w-4 h-4 rounded-full bg-purple-100" />
-          <span className="text-sm font-medium">Saturday</span>
+          <span className="text-sm font-medium">{t('saturday')}</span>
         </div>
       </div>
 
@@ -337,7 +340,7 @@ export function PrintMonth() {
           <div className="p-4">
             <h3 className="text-xl font-bold mb-3 flex items-center gap-2">
               <span className="text-2xl">🗺️</span>
-              This Month's Adventures:
+              {t('this_months_adventures')}
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {monthActivities.map(({ activity }) => (
@@ -350,7 +353,7 @@ export function PrintMonth() {
                   {activity.is_recurring && activity.recurrence_day && (
                     <div className="text-sm text-purple-600 flex items-center gap-1">
                       <span>🔄</span>
-                      Every {activity.recurrence_day}
+                      {t('every')} {activity.recurrence_day}
                       {activity.default_time && ` @ ${activity.default_time}`}
                     </div>
                   )}
@@ -374,7 +377,7 @@ export function PrintMonth() {
 
       {/* Fun Footer */}
       <div className="text-center mt-6 text-gray-400 text-sm">
-        Made with 💜 for Sky
+        {t('made_with_love')}
       </div>
     </div>
   );

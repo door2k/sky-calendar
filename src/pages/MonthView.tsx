@@ -23,9 +23,9 @@ import { useTheme } from '../hooks/useTheme';
 import { usePeople } from '../hooks/usePeople';
 import { useActivities } from '../hooks/useActivities';
 import { useMonthSchedule } from '../hooks/useSchedule';
+import { useI18n, useFormatDate, LanguageToggle } from '../lib/i18n';
 import type { Activity, DaySchedule, SaturdaySchedule } from '../types';
 
-const WEEKDAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
 export function MonthView() {
@@ -33,6 +33,10 @@ export function MonthView() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isViewMode = searchParams.has('view');
+  const { t } = useI18n();
+  const formatDate = useFormatDate();
+
+  const WEEKDAYS_I18N = [t('sun'), t('mon'), t('tue'), t('wed'), t('thu'), t('fri'), t('sat')];
 
   const currentMonth = useMemo(() => {
     if (month) {
@@ -129,10 +133,11 @@ export function MonthView() {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold">Sky's Month</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">{t('skys_month')}</h1>
           <div className="flex items-center gap-4">
+            <LanguageToggle />
             <div className="px-3 py-1.5 rounded-full text-sm font-medium" style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
-              Today: {format(new Date(), 'EEEE, MMM d')}
+              {t('today')}: {formatDate(new Date(), 'EEEE, MMM d')}
             </div>
             {!isViewMode && <ThemePicker currentTheme={currentTheme} onSelectTheme={selectTheme} />}
           </div>
@@ -147,7 +152,7 @@ export function MonthView() {
             ◀
           </button>
           <h2 className="text-xl font-bold">
-            {format(currentMonth, 'MMMM yyyy').toUpperCase()}
+            {formatDate(currentMonth, 'MMMM yyyy').toUpperCase()}
           </h2>
           <button
             onClick={handleNextMonth}
@@ -161,7 +166,7 @@ export function MonthView() {
         <div className="border rounded-lg overflow-hidden">
           {/* Weekday Headers */}
           <div className="grid grid-cols-7 bg-gray-100">
-            {WEEKDAYS.map((day) => (
+            {WEEKDAYS_I18N.map((day) => (
               <div key={day} className="p-2 text-center text-sm font-medium">
                 {day}
               </div>
@@ -209,8 +214,8 @@ export function MonthView() {
                   {/* Last Friday badge */}
                   {isLastFri && (
                     <div className="text-xs font-bold text-orange-600 mt-1">
-                      NO GAN
-                      <div className="font-normal">Last Friday</div>
+                      {t('no_gan')}
+                      <div className="font-normal">{t('reason_last_friday')}</div>
                     </div>
                   )}
 
@@ -218,9 +223,9 @@ export function MonthView() {
                   {isNoGan && !isLastFri && (
                     <div className="text-xs font-bold text-orange-600 mt-1">
                       {schedule?.no_gan_reason === 'Holiday' ? (
-                        <>🎉 HOLIDAY</>
+                        <>{t('holiday_label')}</>
                       ) : (
-                        <>NO GAN</>
+                        <>{t('no_gan')}</>
                       )}
                       {schedule?.no_gan_reason && (
                         <div className="font-normal">{schedule.no_gan_reason}</div>
@@ -300,33 +305,33 @@ export function MonthView() {
         <div className="flex flex-wrap items-center gap-4 mt-4 text-sm text-gray-600">
           <div className="flex items-center gap-1">
             <span>🏫</span>
-            <span>Gan Activity</span>
+            <span>{t('gan_activity')}</span>
           </div>
           <div className="flex items-center gap-1">
             <span>🎯</span>
-            <span>After-Gan Activity</span>
+            <span>{t('after_gan_activity')}</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-purple-600">○</span>
-            <span>Recurring</span>
+            <span>{t('recurring')}</span>
           </div>
           <div className="flex items-center gap-2">
             <div
               className="w-4 h-4 rounded"
               style={{ backgroundColor: 'var(--color-no-gan)' }}
             />
-            <span>No Gan / Holiday</span>
+            <span>{t('no_gan_holiday')}</span>
           </div>
           <div className="flex items-center gap-2">
             <div
               className="w-4 h-4 rounded"
               style={{ backgroundColor: 'var(--color-saturday)' }}
             />
-            <span>Saturday / Last Friday</span>
+            <span>{t('saturday_last_friday')}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded ring-2 ring-yellow-400" />
-            <span>Today</span>
+            <span>{t('today')}</span>
           </div>
         </div>
 
@@ -336,13 +341,13 @@ export function MonthView() {
             to={`/week${isViewMode ? '?view' : ''}`}
             className="px-4 py-2 rounded-lg border hover:bg-gray-50"
           >
-            Week View
+            {t('week_view')}
           </Link>
           <button
             onClick={handlePrint}
             className="px-4 py-2 rounded-lg border hover:bg-gray-50"
           >
-            Print
+            {t('print')}
           </button>
         </div>
       </div>

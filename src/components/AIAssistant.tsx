@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { format } from 'date-fns';
 import { useUpdateDaySchedule, useUpdateSaturdaySchedule } from '../hooks/useSchedule';
 import { useCreateActivity, useDeleteActivity } from '../hooks/useActivities';
+import { useI18n } from '../lib/i18n';
 import type { Person, Activity, DaySchedule, SaturdayActivity } from '../types';
 
 interface AIAssistantProps {
@@ -71,12 +72,13 @@ declare global {
 }
 
 export function AIAssistant({ people, activities, currentWeekStart, schedules = [] }: AIAssistantProps) {
+  const { t, lang } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: 'Hi! I\'m Sky\'s schedule assistant. Just tell me what you need in plain language, like:\n\n"Set Tamir for pickup on Monday and Tuesday"\n"Add a hip hop class on Mondays at 4:30pm in Gan Meir"\n"Mark Friday as no gan because of a holiday"',
+      content: t('ai_greeting'),
     },
   ]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -133,7 +135,7 @@ export function AIAssistant({ people, activities, currentWeekStart, schedules = 
     const recognition = new SpeechRecognitionAPI();
     recognition.continuous = false;
     recognition.interimResults = true;
-    recognition.lang = 'en-US';
+    recognition.lang = lang === 'he' ? 'he-IL' : 'en-US';
 
     recognition.onresult = (event) => {
       let transcript = '';
@@ -345,7 +347,7 @@ export function AIAssistant({ people, activities, currentWeekStart, schedules = 
         onClick={() => setIsOpen(!isOpen)}
         className="fixed bottom-4 right-4 w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-white text-2xl z-50 transition-transform hover:scale-105"
         style={{ backgroundColor: 'var(--color-primary)' }}
-        aria-label={isOpen ? 'Close assistant' : 'Open assistant'}
+        aria-label={isOpen ? t('close_assistant') : t('open_assistant')}
       >
         {isOpen ? '×' : '✨'}
       </button>
@@ -358,7 +360,7 @@ export function AIAssistant({ people, activities, currentWeekStart, schedules = 
             className="px-4 py-3 rounded-t-lg text-white font-medium"
             style={{ backgroundColor: 'var(--color-primary)' }}
           >
-            Schedule Assistant
+            {t('schedule_assistant')}
           </div>
 
           {/* Messages */}
@@ -377,7 +379,7 @@ export function AIAssistant({ people, activities, currentWeekStart, schedules = 
             ))}
             {isProcessing && (
               <div className="mr-8 bg-blue-50 rounded-lg p-3 text-sm text-gray-500">
-                Thinking...
+                {t('thinking')}
               </div>
             )}
             <div ref={messagesEndRef} />
@@ -391,7 +393,7 @@ export function AIAssistant({ people, activities, currentWeekStart, schedules = 
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={isListening ? 'Listening...' : 'Tell me what you need...'}
+                placeholder={isListening ? t('listening') : t('tell_me_what_you_need')}
                 className={`flex-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   isListening ? 'border-red-400 bg-red-50' : ''
                 }`}
@@ -407,7 +409,7 @@ export function AIAssistant({ people, activities, currentWeekStart, schedules = 
                       ? 'bg-red-500 hover:bg-red-600 animate-pulse'
                       : 'bg-gray-500 hover:bg-gray-600'
                   }`}
-                  aria-label={isListening ? 'Stop listening' : 'Start voice input'}
+                  aria-label={isListening ? t('stop_listening') : t('start_voice_input')}
                 >
                   🎤
                 </button>

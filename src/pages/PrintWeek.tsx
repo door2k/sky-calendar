@@ -6,6 +6,7 @@ import { useActivities } from '../hooks/useActivities';
 import { useWeekSchedule } from '../hooks/useSchedule';
 import { useTheme } from '../hooks/useTheme';
 import { PersonAvatar } from '../components/PersonAvatar';
+import { useI18n, useFormatDate } from '../lib/i18n';
 import type { Activity, SaturdayActivity, Person } from '../types';
 
 const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -36,6 +37,8 @@ export function PrintWeek() {
   const { data: people = [] } = usePeople();
   const { data: activities = [] } = useActivities();
   const { data: weekData } = useWeekSchedule(weekStart);
+  const { t, translateName } = useI18n();
+  const formatDate = useFormatDate();
 
   const themeEmoji = currentTheme?.emoji || '✨';
 
@@ -68,8 +71,8 @@ export function PrintWeek() {
     if (!person) return <span className="text-gray-400 text-xs">—</span>;
     return (
       <div className="flex flex-col items-center">
-        <PersonAvatar person={person} size={size} showName={false} printSize />
-        <span className="text-xs leading-tight text-center mt-0.5">{person.name}</span>
+        <PersonAvatar person={person} size={size} showName={false} printSize translateName={translateName} />
+        <span className="text-xs leading-tight text-center mt-0.5">{translateName(person.name)}</span>
       </div>
     );
   };
@@ -158,7 +161,7 @@ export function PrintWeek() {
         onClick={() => navigate(-1)}
         className="mb-4 px-4 py-2 border rounded no-print hover:bg-gray-50"
       >
-        ← Back
+        {t('back')}
       </button>
 
       {/* Fun Header */}
@@ -174,10 +177,10 @@ export function PrintWeek() {
             {themeEmoji} {themeEmoji} {themeEmoji}
           </div>
           <h1 className="text-4xl font-black tracking-wide">
-            SKY'S AWESOME WEEK!
+            {t('skys_awesome_week')}
           </h1>
           <p className="text-xl mt-2 opacity-90">
-            {format(weekStart, 'MMMM d')} - {format(weekEndDate, 'd, yyyy')}
+            {formatDate(weekStart, 'MMMM d')} - {formatDate(weekEndDate, 'd, yyyy')}
           </p>
           <div className="text-4xl mt-2">
             {themeEmoji} {themeEmoji} {themeEmoji}
@@ -229,9 +232,9 @@ export function PrintWeek() {
               {/* No Gan Banner */}
               {isNoGan && (
                 <div className="bg-orange-500 text-white text-center py-1 font-bold text-sm">
-                  🏠 NO GAN! 🏠
+                  {t('no_gan_banner')}
                   {isLastFriday ? (
-                    <div className="text-xs font-normal">Last Friday of the Month!</div>
+                    <div className="text-xs font-normal">{t('last_friday_of_month')}</div>
                   ) : day?.no_gan_reason ? (
                     <div className="text-xs font-normal">{day.no_gan_reason}</div>
                   ) : null}
@@ -290,7 +293,7 @@ export function PrintWeek() {
                         )}
                       </>
                     ) : (
-                      <span className="text-amber-400 text-xs">TBD</span>
+                      <span className="text-amber-400 text-xs">{t('tbd')}</span>
                     )}
                   </div>
                 )}
@@ -311,7 +314,7 @@ export function PrintWeek() {
           <div className="flex items-center justify-center gap-3 mb-3">
             <span className="text-4xl">🌸</span>
             <h2 className="text-2xl font-black text-purple-800">
-              SATURDAY {format(weekDates[6], 'd')}
+              {t('saturday').toUpperCase()} {format(weekDates[6], 'd')}
             </h2>
             <span className="text-4xl">🌸</span>
           </div>
@@ -332,7 +335,7 @@ export function PrintWeek() {
           ) : (
             <div className="text-center py-4">
               <span className="text-4xl">😴</span>
-              <div className="text-purple-700 font-medium mt-2">Rest & relax day!</div>
+              <div className="text-purple-700 font-medium mt-2">{t('rest_and_relax')}</div>
             </div>
           )}
 
@@ -351,7 +354,7 @@ export function PrintWeek() {
           <div className="p-4">
             <h3 className="text-xl font-bold mb-3 flex items-center gap-2">
               <span className="text-2xl">📍</span>
-              Where to go this week:
+              {t('where_to_go_week')}
             </h3>
             <div className="grid grid-cols-2 gap-3">
               {weekActivities.map(({ activity, days, time }) => (
@@ -383,7 +386,7 @@ export function PrintWeek() {
 
       {/* Fun Footer */}
       <div className="text-center mt-6 text-gray-400 text-sm">
-        Made with 💜 for Sky
+        {t('made_with_love')}
       </div>
     </div>
   );

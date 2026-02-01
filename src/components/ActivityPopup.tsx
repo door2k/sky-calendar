@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Activity } from '../types';
 import { useUpdateActivity } from '../hooks/useActivities';
+import { useI18n } from '../lib/i18n';
 
 interface ActivityPopupProps {
   activity: Activity;
@@ -8,6 +9,7 @@ interface ActivityPopupProps {
 }
 
 export function ActivityPopup({ activity, onClose }: ActivityPopupProps) {
+  const { t } = useI18n();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(activity.name);
   const [address, setAddress] = useState(activity.address || '');
@@ -80,14 +82,14 @@ export function ActivityPopup({ activity, onClose }: ActivityPopupProps) {
                     type="text"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    placeholder="Address"
+                    placeholder={t('address')}
                     className="border rounded px-2 py-1 w-full text-sm"
                   />
                   <input
                     type="text"
                     value={mapsUrl}
                     onChange={(e) => setMapsUrl(e.target.value)}
-                    placeholder="Google Maps URL"
+                    placeholder={t('google_maps_url')}
                     className="border rounded px-2 py-1 w-full text-sm"
                   />
                 </div>
@@ -101,12 +103,12 @@ export function ActivityPopup({ activity, onClose }: ActivityPopupProps) {
                       rel="noopener noreferrer"
                       className="text-blue-600 hover:underline text-sm"
                     >
-                      Open in Google Maps
+                      {t('open_in_maps')}
                     </a>
                   )}
                 </div>
               ) : (
-                <span className="text-gray-400 italic">No address</span>
+                <span className="text-gray-400 italic">{t('no_address')}</span>
               )}
             </div>
           </div>
@@ -119,7 +121,7 @@ export function ActivityPopup({ activity, onClose }: ActivityPopupProps) {
                 type="tel"
                 value={contactPhone}
                 onChange={(e) => setContactPhone(e.target.value)}
-                placeholder="Contact phone"
+                placeholder={t('contact_phone')}
                 className="border rounded px-2 py-1 flex-1 text-sm"
               />
             ) : contactPhone ? (
@@ -130,7 +132,7 @@ export function ActivityPopup({ activity, onClose }: ActivityPopupProps) {
                 {contactPhone}
               </a>
             ) : (
-              <span className="text-gray-400 italic">No phone</span>
+              <span className="text-gray-400 italic">{t('no_phone')}</span>
             )}
           </div>
 
@@ -147,7 +149,7 @@ export function ActivityPopup({ activity, onClose }: ActivityPopupProps) {
             ) : defaultTime ? (
               <span>{defaultTime}</span>
             ) : (
-              <span className="text-gray-400 italic">No default time</span>
+              <span className="text-gray-400 italic">{t('no_default_time')}</span>
             )}
           </div>
 
@@ -158,14 +160,14 @@ export function ActivityPopup({ activity, onClose }: ActivityPopupProps) {
               <textarea
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                placeholder="Notes"
+                placeholder={t('notes')}
                 rows={3}
                 className="border rounded px-2 py-1 flex-1 text-sm"
               />
             ) : note ? (
               <div className="text-gray-700">{note}</div>
             ) : (
-              <span className="text-gray-400 italic">No notes</span>
+              <span className="text-gray-400 italic">{t('no_notes')}</span>
             )}
           </div>
 
@@ -174,8 +176,8 @@ export function ActivityPopup({ activity, onClose }: ActivityPopupProps) {
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <span>🔄</span>
               <span>
-                Every {activity.recurrence_day}
-                {activity.default_time && ` at ${activity.default_time}`}
+                {t('every')} {activity.recurrence_day}
+                {activity.default_time && ` ${t('at')} ${activity.default_time}`}
               </span>
             </div>
           )}
@@ -189,14 +191,14 @@ export function ActivityPopup({ activity, onClose }: ActivityPopupProps) {
                 onClick={handleCancel}
                 className="px-4 py-2 rounded border hover:bg-gray-50"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 onClick={handleSave}
                 disabled={updateActivity.isPending}
                 className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
               >
-                {updateActivity.isPending ? 'Saving...' : 'Save'}
+                {updateActivity.isPending ? t('saving') : t('save')}
               </button>
             </>
           ) : (
@@ -204,7 +206,7 @@ export function ActivityPopup({ activity, onClose }: ActivityPopupProps) {
               onClick={() => setIsEditing(true)}
               className="px-4 py-2 rounded bg-gray-100 hover:bg-gray-200"
             >
-              Edit Activity
+              {t('edit_activity')}
             </button>
           )}
         </div>

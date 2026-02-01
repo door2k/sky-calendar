@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { usePeople, useUpdatePerson, useCreatePerson, useDeletePerson } from '../hooks/usePeople';
 import { supabase } from '../lib/supabase';
+import { useI18n, type TranslationKey } from '../lib/i18n';
 import type { Person } from '../types';
 
 interface EditingPerson extends Person {
@@ -12,6 +13,7 @@ export function PeopleEditor() {
   const updatePerson = useUpdatePerson();
   const createPerson = useCreatePerson();
   const deletePerson = useDeletePerson();
+  const { t, translateName, translateRole } = useI18n();
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<EditingPerson | null>(null);
@@ -57,7 +59,7 @@ export function PeopleEditor() {
           avatar_url: personData.avatar_url || undefined,
           avatar_url_2: personData.avatar_url_2 || undefined,
         });
-        setMessage({ type: 'success', text: 'Person created!' });
+        setMessage({ type: 'success', text: t('person_created') });
       } else {
         await updatePerson.mutateAsync({
           id: editForm.id,
@@ -66,7 +68,7 @@ export function PeopleEditor() {
           avatar_url: editForm.avatar_url || undefined,
           avatar_url_2: editForm.avatar_url_2 || undefined,
         });
-        setMessage({ type: 'success', text: 'Changes saved!' });
+        setMessage({ type: 'success', text: t('changes_saved') });
       }
       setEditingId(null);
       setEditForm(null);
@@ -76,11 +78,11 @@ export function PeopleEditor() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this person?')) return;
+    if (!confirm(t('confirm_delete'))) return;
 
     try {
       await deletePerson.mutateAsync(id);
-      setMessage({ type: 'success', text: 'Person deleted!' });
+      setMessage({ type: 'success', text: t('person_deleted') });
       if (editingId === id) {
         setEditingId(null);
         setEditForm(null);
@@ -94,7 +96,7 @@ export function PeopleEditor() {
     if (!editForm) return;
 
     setUploading(field === 'avatar_url' ? 'avatar' : 'avatar2');
-    setMessage(null); // Clear previous messages
+    setMessage(null);
 
     try {
       const fileExt = file.name.split('.').pop();
@@ -119,7 +121,7 @@ export function PeopleEditor() {
       console.log('Public URL:', publicUrl);
 
       setEditForm({ ...editForm, [field]: publicUrl });
-      setMessage({ type: 'success', text: 'Image uploaded! Click Save to keep changes.' });
+      setMessage({ type: 'success', text: t('image_uploaded') });
     } catch (error) {
       console.error('Upload error:', error);
       setMessage({ type: 'error', text: `Upload error: ${error instanceof Error ? error.message : 'Unknown error'}` });
@@ -138,7 +140,7 @@ export function PeopleEditor() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-gray-500">Loading...</div>
+        <div className="text-gray-500">{t('loading')}</div>
       </div>
     );
   }
@@ -148,14 +150,14 @@ export function PeopleEditor() {
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold">People Editor</h1>
-            <p className="text-gray-600">Manage caregivers and their avatars</p>
+            <h1 className="text-2xl md:text-3xl font-bold">{t('people_editor')}</h1>
+            <p className="text-gray-600">{t('manage_caregivers')}</p>
           </div>
           <button
             onClick={startCreating}
             className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
           >
-            + Add Person
+            {t('add_person')}
           </button>
         </div>
 
@@ -166,10 +168,9 @@ export function PeopleEditor() {
         )}
 
         <div className="space-y-4">
-          {/* New person form */}
           {editingId === 'new' && editForm && (
             <div className="bg-white rounded-lg shadow-md p-6 border-2 border-green-400">
-              <h3 className="font-bold text-lg mb-4">New Person</h3>
+              <h3 className="font-bold text-lg mb-4">{t('new_person')}</h3>
               <PersonForm
                 editForm={editForm}
                 setEditForm={setEditForm}
@@ -180,11 +181,11 @@ export function PeopleEditor() {
                 fileInput2Ref={fileInput2Ref}
                 onFileChange={handleFileChange}
                 isSaving={createPerson.isPending}
+                t={t}
               />
             </div>
           )}
 
-          {/* Existing people */}
           {people.map((person) => (
             <div key={person.id} className="bg-white rounded-lg shadow-md p-6">
               {editingId === person.id && editForm ? (
@@ -199,23 +200,23 @@ export function PeopleEditor() {
                   fileInput2Ref={fileInput2Ref}
                   onFileChange={handleFileChange}
                   isSaving={updatePerson.isPending}
+                  t={t}
                 />
               ) : (
-                <PersonDisplay person={person} onEdit={() => startEditing(person)} />
+                <PersonDisplay person={person} onEdit={() => startEditing(person)} t={t} translateName={translateName} translateRole={translateRole} />
               )}
             </div>
           ))}
 
           {people.length === 0 && editingId !== 'new' && (
             <div className="text-center py-12 text-gray-500">
-              No people yet. Click "Add Person" to create one.
+              {t('no_people_yet')}
             </div>
           )}
         </div>
 
         <div className="mt-8 p-4 bg-blue-50 rounded-lg text-sm text-blue-800">
-          <strong>Tip:</strong> For entries like "Gili & Yossi" that represent two people,
-          use the "Second Avatar" field to show both photos side by side.
+          {t('tip_dual_avatar')}
         </div>
       </div>
     </div>
@@ -225,9 +226,12 @@ export function PeopleEditor() {
 interface PersonDisplayProps {
   person: Person;
   onEdit: () => void;
+  t: (key: TranslationKey) => string;
+  translateName: (name: string) => string;
+  translateRole: (role: string) => string;
 }
 
-function PersonDisplay({ person, onEdit }: PersonDisplayProps) {
+function PersonDisplay({ person, onEdit, t, translateName, translateRole }: PersonDisplayProps) {
   return (
     <div className="flex items-center gap-4">
       <div className="flex -space-x-2">
@@ -239,7 +243,7 @@ function PersonDisplay({ person, onEdit }: PersonDisplayProps) {
           />
         ) : (
           <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 border-2 border-white shadow">
-            <span className="text-2xl">{person.name.charAt(0)}</span>
+            <span className="text-2xl">{translateName(person.name).charAt(0)}</span>
           </div>
         )}
         {person.avatar_url_2 && (
@@ -251,14 +255,14 @@ function PersonDisplay({ person, onEdit }: PersonDisplayProps) {
         )}
       </div>
       <div className="flex-1">
-        <h3 className="font-bold text-lg">{person.name}</h3>
-        <p className="text-gray-600">{person.role}</p>
+        <h3 className="font-bold text-lg">{translateName(person.name)}</h3>
+        <p className="text-gray-600">{translateRole(person.role)}</p>
       </div>
       <button
         onClick={onEdit}
         className="px-4 py-2 border rounded-lg hover:bg-gray-50"
       >
-        Edit
+        {t('edit')}
       </button>
     </div>
   );
@@ -275,6 +279,7 @@ interface PersonFormProps {
   fileInput2Ref: React.RefObject<HTMLInputElement | null>;
   onFileChange: (e: React.ChangeEvent<HTMLInputElement>, field: 'avatar_url' | 'avatar_url_2') => void;
   isSaving: boolean;
+  t: (key: TranslationKey) => string;
 }
 
 function PersonForm({
@@ -288,35 +293,36 @@ function PersonForm({
   fileInput2Ref,
   onFileChange,
   isSaving,
+  t,
 }: PersonFormProps) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-1">Name</label>
+          <label className="block text-sm font-medium mb-1">{t('name')}</label>
           <input
             type="text"
             value={editForm.name}
             onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
             className="w-full border rounded-lg p-2"
-            placeholder="e.g., Asaf, Gili & Yossi"
+            placeholder={t('name_placeholder')}
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Role</label>
+          <label className="block text-sm font-medium mb-1">{t('role')}</label>
           <input
             type="text"
             value={editForm.role}
             onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
             className="w-full border rounded-lg p-2"
-            placeholder="e.g., Aba, Savta, Babysitter"
+            placeholder={t('role_placeholder')}
           />
         </div>
       </div>
 
       {/* Avatar 1 */}
       <div>
-        <label className="block text-sm font-medium mb-1">Avatar</label>
+        <label className="block text-sm font-medium mb-1">{t('avatar')}</label>
         <div className="flex items-center gap-4">
           {editForm.avatar_url ? (
             <img
@@ -326,7 +332,7 @@ function PersonForm({
             />
           ) : (
             <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 border">
-              No image
+              {t('no_image')}
             </div>
           )}
           <div className="flex-1 space-y-2">
@@ -335,7 +341,7 @@ function PersonForm({
               value={editForm.avatar_url || ''}
               onChange={(e) => setEditForm({ ...editForm, avatar_url: e.target.value })}
               className="w-full border rounded-lg p-2 text-sm"
-              placeholder="Image URL or upload below"
+              placeholder={t('image_url_placeholder')}
             />
             <div className="flex gap-2">
               <input
@@ -351,7 +357,7 @@ function PersonForm({
                 disabled={uploading === 'avatar'}
                 className="px-3 py-1 text-sm border rounded hover:bg-gray-50 disabled:opacity-50"
               >
-                {uploading === 'avatar' ? 'Uploading...' : 'Upload Image'}
+                {uploading === 'avatar' ? t('uploading') : t('upload_image')}
               </button>
               {editForm.avatar_url && (
                 <button
@@ -359,7 +365,7 @@ function PersonForm({
                   onClick={() => setEditForm({ ...editForm, avatar_url: '' })}
                   className="px-3 py-1 text-sm text-red-600 border border-red-200 rounded hover:bg-red-50"
                 >
-                  Remove
+                  {t('remove')}
                 </button>
               )}
             </div>
@@ -370,7 +376,7 @@ function PersonForm({
       {/* Avatar 2 (for dual entries) */}
       <div>
         <label className="block text-sm font-medium mb-1">
-          Second Avatar <span className="text-gray-400 font-normal">(for entries like "Gili & Yossi")</span>
+          {t('second_avatar')} <span className="text-gray-400 font-normal">{t('second_avatar_hint')}</span>
         </label>
         <div className="flex items-center gap-4">
           {editForm.avatar_url_2 ? (
@@ -381,7 +387,7 @@ function PersonForm({
             />
           ) : (
             <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 border">
-              No image
+              {t('no_image')}
             </div>
           )}
           <div className="flex-1 space-y-2">
@@ -390,7 +396,7 @@ function PersonForm({
               value={editForm.avatar_url_2 || ''}
               onChange={(e) => setEditForm({ ...editForm, avatar_url_2: e.target.value })}
               className="w-full border rounded-lg p-2 text-sm"
-              placeholder="Image URL or upload below"
+              placeholder={t('image_url_placeholder')}
             />
             <div className="flex gap-2">
               <input
@@ -406,7 +412,7 @@ function PersonForm({
                 disabled={uploading === 'avatar2'}
                 className="px-3 py-1 text-sm border rounded hover:bg-gray-50 disabled:opacity-50"
               >
-                {uploading === 'avatar2' ? 'Uploading...' : 'Upload Image'}
+                {uploading === 'avatar2' ? t('uploading') : t('upload_image')}
               </button>
               {editForm.avatar_url_2 && (
                 <button
@@ -414,7 +420,7 @@ function PersonForm({
                   onClick={() => setEditForm({ ...editForm, avatar_url_2: '' })}
                   className="px-3 py-1 text-sm text-red-600 border border-red-200 rounded hover:bg-red-50"
                 >
-                  Remove
+                  {t('remove')}
                 </button>
               )}
             </div>
@@ -429,20 +435,20 @@ function PersonForm({
           disabled={isSaving || !editForm.name.trim()}
           className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
         >
-          {isSaving ? 'Saving...' : 'Save'}
+          {isSaving ? t('saving') : t('save')}
         </button>
         <button
           onClick={onCancel}
           className="px-4 py-2 border rounded-lg hover:bg-gray-50"
         >
-          Cancel
+          {t('cancel')}
         </button>
         {onDelete && (
           <button
             onClick={onDelete}
             className="px-4 py-2 text-red-600 border border-red-200 rounded-lg hover:bg-red-50 ml-auto"
           >
-            Delete
+            {t('delete')}
           </button>
         )}
       </div>
