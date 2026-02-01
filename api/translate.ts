@@ -40,7 +40,7 @@ export default async function handler(req: Request): Promise<Response> {
     const fieldsJson = JSON.stringify(Object.fromEntries(fieldEntries));
 
     const response = await client.messages.create({
-      model: 'claude-haiku-4-20250414',
+      model: 'claude-3-5-haiku-20241022',
       max_tokens: 1024,
       messages: [
         {
