@@ -13,6 +13,9 @@ export interface Activity {
   maps_url?: string;
   contact_phone?: string;
   note?: string;
+  name_he?: string;
+  note_he?: string;
+  address_he?: string;
   is_recurring: boolean;
   recurrence_day?: string; // e.g., "wednesday"
   default_time?: string; // e.g., "17:15"
@@ -31,6 +34,9 @@ export interface DaySchedule {
   is_no_gan: boolean;
   no_gan_reason?: string;
   notes?: string;
+  gan_activity_he?: string;
+  no_gan_reason_he?: string;
+  notes_he?: string;
   created_by?: string;
   updated_by?: string;
   family_dinner_person_id?: string; // For Friday family dinner
@@ -41,6 +47,7 @@ export interface SaturdayActivity {
   activity_id: string;
   time?: string;
   custom_name?: string; // For one-off activities
+  custom_name_he?: string;
 }
 
 export interface SaturdaySchedule {
@@ -48,6 +55,8 @@ export interface SaturdaySchedule {
   date: string;
   activities: SaturdayActivity[];
   notes?: string;
+  notes_he?: string;
+  activities_he?: SaturdayActivity[];
   created_by?: string;
   updated_by?: string;
   family_dinner_person_id?: string; // For last Friday family dinner

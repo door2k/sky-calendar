@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import type { Activity } from '../types';
+import { translateFields } from '../lib/translate';
 
 export function useActivities() {
   return useQuery({
@@ -22,6 +23,17 @@ export function useCreateActivity() {
 
   return useMutation({
     mutationFn: async (activity: Omit<Activity, 'id'>) => {
+      const toTranslate: Record<string, string> = {};
+      if (activity.name) toTranslate.name = activity.name;
+      if (activity.note) toTranslate.note = activity.note;
+      if (activity.address) toTranslate.address = activity.address;
+      if (Object.keys(toTranslate).length > 0) {
+        const he = await translateFields(toTranslate);
+        if (he.name) (activity as any).name_he = he.name;
+        if (he.note) (activity as any).note_he = he.note;
+        if (he.address) (activity as any).address_he = he.address;
+      }
+
       const { data, error } = await supabase
         .from('activities')
         .insert(activity)
@@ -42,6 +54,17 @@ export function useUpdateActivity() {
 
   return useMutation({
     mutationFn: async (activity: Partial<Activity> & { id: string }) => {
+      const toTranslate: Record<string, string> = {};
+      if (activity.name) toTranslate.name = activity.name;
+      if (activity.note) toTranslate.note = activity.note;
+      if (activity.address) toTranslate.address = activity.address;
+      if (Object.keys(toTranslate).length > 0) {
+        const he = await translateFields(toTranslate);
+        if (he.name) activity.name_he = he.name;
+        if (he.note) activity.note_he = he.note;
+        if (he.address) activity.address_he = he.address;
+      }
+
       const { data, error } = await supabase
         .from('activities')
         .update(activity)

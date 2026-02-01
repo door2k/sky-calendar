@@ -2,6 +2,7 @@ import { format, isSaturday, isFriday, getDay } from 'date-fns';
 import { isLastFridayOfMonth } from '../lib/dateUtils';
 import { useI18n, useFormatDate } from '../lib/i18n';
 import type { DaySchedule, SaturdaySchedule, Person, Activity } from '../types';
+import { lf } from '../lib/i18n-field';
 import { PersonAvatar } from './PersonAvatar';
 
 const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -33,7 +34,7 @@ export function DayCard({
   lastFridaySchedule,
   readOnly = false,
 }: DayCardProps) {
-  const { t, translateName, translateActivity, translateReason } = useI18n();
+  const { t, lang, translateName, translateActivity, translateReason } = useI18n();
   const formatDate = useFormatDate();
   const dayName = formatDate(date, 'EEEE').toUpperCase();
   const dayNumber = format(date, 'd');
@@ -107,7 +108,7 @@ export function DayCard({
                 >
                   <span>🎯</span>
                   <span className={activity ? 'cursor-pointer hover:underline' : ''}>
-                    {act.custom_name ? translateActivity(act.custom_name) : activity?.name ? translateActivity(activity.name) : t('activity')}
+                    {act.custom_name ? translateActivity(act.custom_name, scheduleToUse?.activities_he?.[idx]?.custom_name_he) : activity?.name ? translateActivity(activity.name, activity.name_he) : t('activity')}
                   </span>
                   {act.time && <span className="text-gray-600">— {act.time}</span>}
                 </div>
@@ -118,7 +119,7 @@ export function DayCard({
           <div className="text-gray-500 italic">{t('no_activities_planned')}</div>
         )}
         {scheduleToUse?.notes && (
-          <div className="mt-2 text-sm text-gray-600">{scheduleToUse.notes}</div>
+          <div className="mt-2 text-sm text-gray-600">{lf(scheduleToUse, 'notes', lang)}</div>
         )}
         {/* Family Dinner for last Fridays */}
         {isLastFri && !isSat && (
@@ -177,7 +178,7 @@ export function DayCard({
           <div className="font-bold">{dayName}</div>
           <div className="text-2xl">{dayNumber}</div>
           {isNoGan && schedule?.no_gan_reason && (
-            <div className="text-sm text-orange-700">{translateReason(schedule.no_gan_reason)}</div>
+            <div className="text-sm text-orange-700">{translateReason(schedule.no_gan_reason, schedule.no_gan_reason_he)}</div>
           )}
         </div>
 
@@ -195,7 +196,7 @@ export function DayCard({
             style={{ backgroundColor: isNoGan ? 'transparent' : 'var(--color-gan)' }}
           >
             <span>🏫</span>
-            <span>{schedule?.gan_activity ? translateActivity(schedule.gan_activity) : '—'}</span>
+            <span>{schedule?.gan_activity ? translateActivity(schedule.gan_activity, schedule.gan_activity_he) : '—'}</span>
           </div>
 
           <div
@@ -216,7 +217,7 @@ export function DayCard({
                   onActivityClick(afterGanActivity);
                 }}
               >
-                {translateActivity(afterGanActivity.name)}
+                {translateActivity(afterGanActivity.name, afterGanActivity.name_he)}
                 {schedule?.after_gan_time && (
                   <span className="text-gray-500 ml-1">{schedule.after_gan_time}</span>
                 )}
@@ -241,7 +242,7 @@ export function DayCard({
               >
                 <span className="text-purple-600">○</span>
                 <span className="cursor-pointer hover:underline text-purple-700">
-                  {translateActivity(activity.name)}
+                  {translateActivity(activity.name, activity.name_he)}
                   {activity.default_time && (
                     <span className="text-purple-500 ml-1">{activity.default_time}</span>
                   )}

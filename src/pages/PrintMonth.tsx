@@ -18,6 +18,7 @@ import { useMonthSchedule } from '../hooks/useSchedule';
 import { useTheme } from '../hooks/useTheme';
 import { useI18n, useFormatDate } from '../lib/i18n';
 import type { Activity, SaturdayActivity } from '../types';
+import { lf } from '../lib/i18n-field';
 
 const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
@@ -51,7 +52,7 @@ export function PrintMonth() {
 
   const { data: activities = [] } = useActivities();
   const { data: monthData } = useMonthSchedule(year, monthNum);
-  const { t, translateActivity, translateReason, translateDayName } = useI18n();
+  const { t, lang, translateActivity, translateReason, translateDayName } = useI18n();
   const formatDate = useFormatDate();
 
   const themeEmoji = currentTheme?.emoji || '✨';
@@ -260,7 +261,7 @@ export function PrintMonth() {
                 {/* No Gan Reason */}
                 {isNoGan && !isLastFri && schedule?.no_gan_reason && isCurrentMonth && (
                   <div className="text-xs text-orange-600 mt-0.5 truncate">
-                    {translateReason(schedule.no_gan_reason)}
+                    {translateReason(schedule.no_gan_reason, schedule.no_gan_reason_he)}
                   </div>
                 )}
 
@@ -273,7 +274,7 @@ export function PrintMonth() {
                         className="text-xs px-1.5 py-0.5 rounded-full truncate text-white font-medium"
                         style={{ backgroundColor: 'var(--color-primary)' }}
                       >
-                        🎯 {translateActivity(assignedActivity.name)}
+                        🎯 {translateActivity(assignedActivity.name, assignedActivity.name_he)}
                       </div>
                     )}
 
@@ -283,7 +284,7 @@ export function PrintMonth() {
                         key={activity.id}
                         className="text-xs px-1.5 py-0.5 rounded-full truncate bg-purple-200 text-purple-800 font-medium"
                       >
-                        ○ {translateActivity(activity.name)}
+                        ○ {translateActivity(activity.name, activity.name_he)}
                       </div>
                     ))}
 
@@ -349,7 +350,7 @@ export function PrintMonth() {
                   className="p-3 rounded-xl bg-white shadow border-l-4"
                   style={{ borderColor: 'var(--color-primary)' }}
                 >
-                  <div className="font-bold">{translateActivity(activity.name)}</div>
+                  <div className="font-bold">{translateActivity(activity.name, activity.name_he)}</div>
                   {activity.is_recurring && activity.recurrence_day && (
                     <div className="text-sm text-purple-600 flex items-center gap-1">
                       <span>🔄</span>
@@ -360,7 +361,7 @@ export function PrintMonth() {
                   {activity.address && (
                     <div className="text-sm text-gray-600 flex items-center gap-1 mt-1">
                       <span>📍</span>
-                      <span className="truncate">{activity.address}</span>
+                      <span className="truncate">{lf(activity, 'address', lang) || activity.address}</span>
                     </div>
                   )}
                   {activity.contact_phone && (

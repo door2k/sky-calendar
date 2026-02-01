@@ -228,7 +228,7 @@ export function MonthView() {
                         <>{t('no_gan')}</>
                       )}
                       {schedule?.no_gan_reason && (
-                        <div className="font-normal">{translateReason(schedule.no_gan_reason)}</div>
+                        <div className="font-normal">{translateReason(schedule.no_gan_reason, schedule.no_gan_reason_he)}</div>
                       )}
                     </div>
                   )}
@@ -236,7 +236,7 @@ export function MonthView() {
                   {/* Gan Activity (only show on weekdays that have gan) */}
                   {!isSaturdayLike && !isNoGan && schedule?.gan_activity && (
                     <div className="text-xs mt-1 truncate">
-                      <span className="text-green-700">🏫 {translateActivity(schedule.gan_activity)}</span>
+                      <span className="text-green-700">🏫 {translateActivity(schedule.gan_activity, schedule.gan_activity_he)}</span>
                     </div>
                   )}
 
@@ -253,7 +253,7 @@ export function MonthView() {
                         }}
                       >
                         <span className="text-blue-600 hover:underline cursor-pointer">
-                          🎯 {translateActivity(getActivityById(schedule.after_gan_activity_id)?.name || '')}
+                          🎯 {translateActivity(getActivityById(schedule.after_gan_activity_id)?.name || ''  , getActivityById(schedule.after_gan_activity_id)?.name_he)}
                         </span>
                       </div>
                     )}
@@ -289,7 +289,7 @@ export function MonthView() {
                           }}
                         >
                           <span className="text-blue-600 hover:underline cursor-pointer">
-                            🎯 {translateActivity(act.custom_name || activity?.name || '')}
+                            🎯 {translateActivity(act.custom_name || activity?.name || ''  , satSchedule?.activities_he?.[idx]?.custom_name_he || activity?.name_he)}
                           </span>
                         </div>
                       );

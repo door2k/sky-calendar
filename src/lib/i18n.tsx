@@ -449,8 +449,8 @@ interface I18nContextType {
   isRTL: boolean;
   translateName: (name: string) => string;
   translateRole: (role: string) => string;
-  translateReason: (reason: string) => string;
-  translateActivity: (name: string) => string;
+  translateReason: (reason: string, heValue?: string | null) => string;
+  translateActivity: (name: string, heValue?: string | null) => string;
   translateDayName: (day: string) => string;
 }
 
@@ -485,15 +485,22 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     return ROLE_MAP_HE[role] || role;
   }, [lang]);
 
-  const translateReason = useCallback((reason: string): string => {
+  const translateReason = useCallback((reason: string, heValue?: string | null): string => {
     if (lang === 'en') return reason;
+    if (heValue) return heValue;
     return REASON_MAP_EN_TO_HE[reason] || reason;
   }, [lang]);
 
-  const translateActivity = useCallback((name: string): string => {
+  const translateActivity = useCallback((name: string, heValue?: string | null): string => {
     if (lang === 'en') return name;
+    if (heValue) return heValue;
     const trimmed = name.trim();
+    if (!trimmed) return name;
+    // Exact match
     if (ACTIVITY_MAP_HE[trimmed]) return ACTIVITY_MAP_HE[trimmed];
+    // If the value is already a Hebrew translation, return as-is
+    const hebrewValues = Object.values(ACTIVITY_MAP_HE);
+    if (hebrewValues.includes(trimmed)) return trimmed;
     // Case-insensitive exact match
     const key = Object.keys(ACTIVITY_MAP_HE).find(k => k.toLowerCase() === trimmed.toLowerCase());
     if (key) return ACTIVITY_MAP_HE[key];

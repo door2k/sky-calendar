@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Activity } from '../types';
 import { useUpdateActivity } from '../hooks/useActivities';
 import { useI18n } from '../lib/i18n';
+import { lf } from '../lib/i18n-field';
 
 interface ActivityPopupProps {
   activity: Activity;
@@ -9,7 +10,7 @@ interface ActivityPopupProps {
 }
 
 export function ActivityPopup({ activity, onClose }: ActivityPopupProps) {
-  const { t, translateActivity, translateDayName } = useI18n();
+  const { t, lang, translateActivity, translateDayName } = useI18n();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(activity.name);
   const [address, setAddress] = useState(activity.address || '');
@@ -61,7 +62,7 @@ export function ActivityPopup({ activity, onClose }: ActivityPopupProps) {
               className="text-xl font-bold border rounded px-2 py-1 w-full mr-2"
             />
           ) : (
-            <h2 className="text-xl font-bold">{translateActivity(name)}</h2>
+            <h2 className="text-xl font-bold">{translateActivity(name, activity.name_he)}</h2>
           )}
           <button
             onClick={onClose}
@@ -95,7 +96,7 @@ export function ActivityPopup({ activity, onClose }: ActivityPopupProps) {
                 </div>
               ) : address ? (
                 <div>
-                  <div>{address}</div>
+                  <div>{lf(activity, 'address', lang) || address}</div>
                   {mapsUrl && (
                     <a
                       href={mapsUrl}
@@ -165,7 +166,7 @@ export function ActivityPopup({ activity, onClose }: ActivityPopupProps) {
                 className="border rounded px-2 py-1 flex-1 text-sm"
               />
             ) : note ? (
-              <div className="text-gray-700">{note}</div>
+              <div className="text-gray-700">{lf(activity, 'note', lang) || note}</div>
             ) : (
               <span className="text-gray-400 italic">{t('no_notes')}</span>
             )}

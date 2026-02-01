@@ -8,6 +8,7 @@ import { useTheme } from '../hooks/useTheme';
 import { PersonAvatar } from '../components/PersonAvatar';
 import { useI18n, useFormatDate } from '../lib/i18n';
 import type { Activity, SaturdayActivity, Person } from '../types';
+import { lf } from '../lib/i18n-field';
 
 const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
@@ -37,7 +38,7 @@ export function PrintWeek() {
   const { data: people = [] } = usePeople();
   const { data: activities = [] } = useActivities();
   const { data: weekData } = useWeekSchedule(weekStart);
-  const { t, translateName, translateActivity, translateReason } = useI18n();
+  const { t, lang, translateName, translateActivity, translateReason } = useI18n();
   const formatDate = useFormatDate();
 
   const themeEmoji = currentTheme?.emoji || '✨';
@@ -236,7 +237,7 @@ export function PrintWeek() {
                   {isLastFriday ? (
                     <div className="text-xs font-normal">{t('last_friday_of_month')}</div>
                   ) : day?.no_gan_reason ? (
-                    <div className="text-xs font-normal">{translateReason(day.no_gan_reason)}</div>
+                    <div className="text-xs font-normal">{translateReason(day.no_gan_reason, day.no_gan_reason_he)}</div>
                   ) : null}
                 </div>
               )}
@@ -252,7 +253,7 @@ export function PrintWeek() {
                 {/* Gan Activity - between drop-off and pickup */}
                 {!isNoGan && day?.gan_activity && (
                   <div className="text-center py-1 bg-green-100 rounded-lg text-green-700 font-medium text-xs">
-                    🏫 {translateActivity(day.gan_activity)}
+                    🏫 {translateActivity(day.gan_activity, day.gan_activity_he)}
                   </div>
                 )}
 
@@ -266,7 +267,7 @@ export function PrintWeek() {
                 {activity && (
                   <div className="p-1.5 rounded-lg text-center font-medium text-xs"
                     style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
-                    🎯 {translateActivity(activity.name)}
+                    🎯 {translateActivity(activity.name, activity.name_he)}
                     {day?.after_gan_time && (
                       <div className="text-xs opacity-80">{day.after_gan_time}</div>
                     )}
@@ -275,7 +276,7 @@ export function PrintWeek() {
                 {recurringActivities.map((act) => (
                   <div key={act.id} className="p-1.5 rounded-lg text-center font-medium text-xs"
                     style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
-                    🎯 {translateActivity(act.name)}
+                    🎯 {translateActivity(act.name, act.name_he)}
                     {act.default_time && (
                       <div className="text-xs opacity-80">{act.default_time}</div>
                     )}
@@ -341,7 +342,7 @@ export function PrintWeek() {
 
           {weekData?.saturday?.notes && (
             <div className="mt-3 p-2 bg-white/60 rounded-lg text-sm text-purple-800">
-              📝 {weekData.saturday.notes}
+              📝 {lang === 'he' && weekData.saturday.notes_he ? weekData.saturday.notes_he : weekData.saturday.notes}
             </div>
           )}
         </div>
@@ -363,13 +364,13 @@ export function PrintWeek() {
                   className="p-3 rounded-xl bg-white shadow border-l-4"
                   style={{ borderColor: 'var(--color-primary)' }}
                 >
-                  <div className="font-bold text-lg">{translateActivity(activity.name)}</div>
+                  <div className="font-bold text-lg">{translateActivity(activity.name, activity.name_he)}</div>
                   <div className="text-sm text-gray-600 flex items-center gap-1">
                     <span>📅</span> {days.join(', ')} {time && `@ ${time}`}
                   </div>
                   {activity.address && (
                     <div className="text-sm text-gray-600 flex items-center gap-1 mt-1">
-                      <span>📍</span> {activity.address}
+                      <span>📍</span> {lf(activity, 'address', lang) || activity.address}
                     </div>
                   )}
                   {activity.contact_phone && (

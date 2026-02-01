@@ -20,6 +20,7 @@ import { useTheme } from '../hooks/useTheme';
 import { PersonAvatar } from '../components/PersonAvatar';
 import { useI18n, useFormatDate } from '../lib/i18n';
 import type { Activity, SaturdayActivity, Person } from '../types';
+import { lf } from '../lib/i18n-field';
 
 const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
@@ -57,7 +58,7 @@ export function PrintCombined() {
   const { data: weekData } = useWeekSchedule(weekStart);
   const { data: monthData } = useMonthSchedule(year, monthNum);
 
-  const { t, translateName, translateActivity } = useI18n();
+  const { t, lang, translateName, translateActivity } = useI18n();
   const formatDate = useFormatDate();
   const themeEmoji = currentTheme?.emoji || '✨';
 
@@ -279,7 +280,7 @@ export function PrintCombined() {
                 {!isNoGan && day?.gan_activity && (
                   <div className="p-1 rounded text-center bg-green-100 text-green-700 font-medium"
                     style={{ fontSize: '7px' }}>
-                    🏫 {translateActivity(day.gan_activity)}
+                    🏫 {translateActivity(day.gan_activity, day.gan_activity_he)}
                   </div>
                 )}
 
@@ -292,13 +293,13 @@ export function PrintCombined() {
                 {activity && (
                   <div className="p-1 rounded text-center text-white font-medium"
                     style={{ backgroundColor: 'var(--color-primary)', fontSize: '8px' }}>
-                    🎯 {translateActivity(activity.name)}
+                    🎯 {translateActivity(activity.name, activity.name_he)}
                   </div>
                 )}
                 {recurringActivities.map((act) => (
                   <div key={act.id} className="p-1 rounded text-center text-white font-medium"
                     style={{ backgroundColor: 'var(--color-primary)', fontSize: '8px' }}>
-                    🎯 {translateActivity(act.name)}
+                    🎯 {translateActivity(act.name, act.name_he)}
                   </div>
                 ))}
 
@@ -442,13 +443,13 @@ export function PrintCombined() {
                 className="p-2 rounded-lg bg-white shadow text-sm border-l-3"
                 style={{ borderLeftWidth: '3px', borderColor: 'var(--color-primary)' }}
               >
-                <div className="font-bold">{translateActivity(activity.name)}</div>
+                <div className="font-bold">{translateActivity(activity.name, activity.name_he)}</div>
                 <div className="text-gray-600" style={{ fontSize: '10px' }}>
                   {days.join(', ')} {time && `@ ${time}`}
                 </div>
                 {activity.address && (
                   <div className="text-gray-500 truncate" style={{ fontSize: '10px' }}>
-                    📍 {activity.address}
+                    📍 {lf(activity, 'address', lang) || activity.address}
                   </div>
                 )}
               </div>

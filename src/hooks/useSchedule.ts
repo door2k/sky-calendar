@@ -3,6 +3,7 @@ import { startOfWeek, addDays, format } from 'date-fns';
 import { supabase } from '../lib/supabase';
 import { isLastFridayOfMonth } from '../lib/dateUtils';
 import type { DaySchedule, SaturdaySchedule } from '../types';
+import { translateFields, translateSaturdayActivities } from '../lib/translate';
 
 export function useWeekSchedule(weekStartDate: Date) {
   const startDate = startOfWeek(weekStartDate, { weekStartsOn: 0 }); // Sunday
@@ -65,6 +66,17 @@ export function useUpdateDaySchedule() {
 
   return useMutation({
     mutationFn: async (schedule: Partial<DaySchedule> & { date: string }) => {
+      const toTranslate: Record<string, string> = {};
+      if (schedule.gan_activity) toTranslate.gan_activity = schedule.gan_activity;
+      if (schedule.no_gan_reason) toTranslate.no_gan_reason = schedule.no_gan_reason;
+      if (schedule.notes) toTranslate.notes = schedule.notes;
+      if (Object.keys(toTranslate).length > 0) {
+        const he = await translateFields(toTranslate);
+        if (he.gan_activity) schedule.gan_activity_he = he.gan_activity;
+        if (he.no_gan_reason) schedule.no_gan_reason_he = he.no_gan_reason;
+        if (he.notes) schedule.notes_he = he.notes;
+      }
+
       const { data, error } = await supabase
         .from('day_schedules')
         .upsert(schedule, { onConflict: 'date' })
@@ -85,6 +97,14 @@ export function useUpdateSaturdaySchedule() {
 
   return useMutation({
     mutationFn: async (schedule: Partial<SaturdaySchedule> & { date: string }) => {
+      if (schedule.notes) {
+        const he = await translateFields({ notes: schedule.notes });
+        if (he.notes) schedule.notes_he = he.notes;
+      }
+      if (schedule.activities && schedule.activities.length > 0) {
+        schedule.activities_he = await translateSaturdayActivities(schedule.activities);
+      }
+
       const { data, error } = await supabase
         .from('saturday_schedules')
         .upsert(schedule, { onConflict: 'date' })
