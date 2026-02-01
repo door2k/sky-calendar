@@ -16,8 +16,9 @@ function ActivityAutocomplete({
   onChange: (activityId: string, newName: string | null) => void;
   placeholder?: string;
 }) {
+  const { t, translateActivity } = useI18n();
   const selectedActivity = activities.find((a) => a.id === value);
-  const [text, setText] = useState(selectedActivity?.name || '');
+  const [text, setText] = useState(selectedActivity ? translateActivity(selectedActivity.name) : '');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [highlightIdx, setHighlightIdx] = useState(-1);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -37,18 +38,18 @@ function ActivityAutocomplete({
     if (!value) setText('');
     else {
       const act = activities.find((a) => a.id === value);
-      if (act) setText(act.name);
+      if (act) setText(translateActivity(act.name));
     }
   }, [value, activities]);
 
   const filtered = text.trim()
-    ? activities.filter((a) => a.name.toLowerCase().includes(text.toLowerCase()))
+    ? activities.filter((a) => a.name.toLowerCase().includes(text.toLowerCase()) || translateActivity(a.name).toLowerCase().includes(text.toLowerCase()))
     : activities;
 
-  const exactMatch = activities.find((a) => a.name.toLowerCase() === text.trim().toLowerCase());
+  const exactMatch = activities.find((a) => a.name.toLowerCase() === text.trim().toLowerCase() || translateActivity(a.name).toLowerCase() === text.trim().toLowerCase());
 
   const handleSelect = (activity: Activity) => {
-    setText(activity.name);
+    setText(translateActivity(activity.name));
     setShowSuggestions(false);
     setHighlightIdx(-1);
     onChange(activity.id, null);
@@ -84,8 +85,6 @@ function ActivityAutocomplete({
     }
   };
 
-  const { t } = useI18n();
-
   return (
     <div ref={wrapperRef} className="relative">
       <input
@@ -105,7 +104,7 @@ function ActivityAutocomplete({
               className={`px-3 py-2 cursor-pointer ${i === highlightIdx ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
               onMouseDown={() => handleSelect(a)}
             >
-              {a.name}
+              {translateActivity(a.name)}
             </li>
           ))}
         </ul>

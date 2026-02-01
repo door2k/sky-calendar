@@ -414,6 +414,12 @@ const ACTIVITY_MAP_HE: Record<string, string> = {
   'Guitar': 'גיטרה',
   'Painting': 'ציור',
   'Chess': 'שחמט',
+  'Ninja': 'נינג׳ה',
+  'Bats': 'עטלפים',
+  'Circus': 'קרקס',
+  'Trampoline': 'טרמפולינה',
+  'Climbing': 'טיפוס',
+  'Martial Arts': 'אומנויות לחימה',
 };
 
 // Day name translation map (for recurrence_day display)
