@@ -494,9 +494,16 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     if (lang === 'en') return name;
     const trimmed = name.trim();
     if (ACTIVITY_MAP_HE[trimmed]) return ACTIVITY_MAP_HE[trimmed];
-    // Case-insensitive fallback
+    // Case-insensitive exact match
     const key = Object.keys(ACTIVITY_MAP_HE).find(k => k.toLowerCase() === trimmed.toLowerCase());
-    return key ? ACTIVITY_MAP_HE[key] : name;
+    if (key) return ACTIVITY_MAP_HE[key];
+    // Partial match: if the name contains a known activity as a word (e.g. "Ninja class" → "נינג׳ה")
+    const lower = trimmed.toLowerCase();
+    const partialKey = Object.keys(ACTIVITY_MAP_HE)
+      .sort((a, b) => b.length - a.length) // longest match first
+      .find(k => lower.includes(k.toLowerCase()));
+    if (partialKey) return ACTIVITY_MAP_HE[partialKey];
+    return name;
   }, [lang]);
 
   const translateDayName = useCallback((day: string): string => {
