@@ -492,9 +492,10 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   const translateActivity = useCallback((name: string): string => {
     if (lang === 'en') return name;
-    if (ACTIVITY_MAP_HE[name]) return ACTIVITY_MAP_HE[name];
+    const trimmed = name.trim();
+    if (ACTIVITY_MAP_HE[trimmed]) return ACTIVITY_MAP_HE[trimmed];
     // Case-insensitive fallback
-    const key = Object.keys(ACTIVITY_MAP_HE).find(k => k.toLowerCase() === name.toLowerCase());
+    const key = Object.keys(ACTIVITY_MAP_HE).find(k => k.toLowerCase() === trimmed.toLowerCase());
     return key ? ACTIVITY_MAP_HE[key] : name;
   }, [lang]);
 
