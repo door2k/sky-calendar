@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import {
   startOfMonth,
   endOfMonth,
@@ -31,6 +31,8 @@ const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'frid
 export function MonthView() {
   const { month } = useParams<{ month?: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isViewMode = searchParams.has('view');
 
   const currentMonth = useMemo(() => {
     if (month) {
@@ -101,19 +103,21 @@ export function MonthView() {
     );
   };
 
+  const viewSuffix = isViewMode ? '?view' : '';
+
   const handlePrevMonth = () => {
     const prev = subMonths(currentMonth, 1);
-    navigate(`/month/${format(prev, 'yyyy-MM')}`);
+    navigate(`/month/${format(prev, 'yyyy-MM')}${viewSuffix}`);
   };
 
   const handleNextMonth = () => {
     const next = addMonths(currentMonth, 1);
-    navigate(`/month/${format(next, 'yyyy-MM')}`);
+    navigate(`/month/${format(next, 'yyyy-MM')}${viewSuffix}`);
   };
 
   const handleDayClick = (date: Date) => {
     const weekStart = startOfWeek(date, { weekStartsOn: 0 });
-    navigate(`/week/${format(weekStart, 'yyyy-MM-dd')}`);
+    navigate(`/week/${format(weekStart, 'yyyy-MM-dd')}${isViewMode ? '?view' : ''}`);
   };
 
   const handlePrint = () => {
@@ -130,7 +134,7 @@ export function MonthView() {
             <div className="px-3 py-1.5 rounded-full text-sm font-medium" style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
               Today: {format(new Date(), 'EEEE, MMM d')}
             </div>
-            <ThemePicker currentTheme={currentTheme} onSelectTheme={selectTheme} />
+            {!isViewMode && <ThemePicker currentTheme={currentTheme} onSelectTheme={selectTheme} />}
           </div>
         </div>
 
@@ -329,7 +333,7 @@ export function MonthView() {
         {/* Footer Navigation */}
         <div className="flex items-center justify-center gap-4 mt-6 no-print">
           <Link
-            to="/week"
+            to={`/week${isViewMode ? '?view' : ''}`}
             className="px-4 py-2 rounded-lg border hover:bg-gray-50"
           >
             Week View
@@ -352,12 +356,14 @@ export function MonthView() {
       )}
 
       {/* AI Assistant */}
-      <AIAssistant
-        people={people}
-        activities={activities}
-        currentWeekStart={currentWeekStart}
-        schedules={monthData?.daySchedules || []}
-      />
+      {!isViewMode && (
+        <AIAssistant
+          people={people}
+          activities={activities}
+          currentWeekStart={currentWeekStart}
+          schedules={monthData?.daySchedules || []}
+        />
+      )}
     </div>
   );
 }

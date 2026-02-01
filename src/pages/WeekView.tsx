@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { startOfWeek, addWeeks, addDays, format, parseISO, isSameDay } from 'date-fns';
 import { DayCard } from '../components/DayCard';
 import { ThemePicker } from '../components/ThemePicker';
@@ -16,6 +16,8 @@ import type { Activity, DaySchedule, SaturdaySchedule } from '../types';
 export function WeekView() {
   const { date } = useParams<{ date?: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isViewMode = searchParams.has('view');
   const [weekOffset, setWeekOffset] = useState(0);
 
   // If date param exists (from bookmark/direct link), calculate initial offset
@@ -129,7 +131,7 @@ export function WeekView() {
             <div className="px-3 py-1.5 rounded-full text-sm font-medium" style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
               Today: {format(new Date(), 'EEEE, MMM d')}
             </div>
-            <ThemePicker currentTheme={currentTheme} onSelectTheme={selectTheme} />
+            {!isViewMode && <ThemePicker currentTheme={currentTheme} onSelectTheme={selectTheme} />}
           </div>
         </div>
 
@@ -149,6 +151,7 @@ export function WeekView() {
                   isToday={isToday}
                   isLastFriday={index === 5 && weekData?.fridayIsLastOfMonth}
                   lastFridaySchedule={index === 5 ? weekData?.lastFriday : undefined}
+                  readOnly={isViewMode}
                 />
               </div>
             );
@@ -166,6 +169,7 @@ export function WeekView() {
             onEdit={() => setEditingDate(weekDates[6])}
             onActivityClick={setSelectedActivity}
             isToday={isSameDay(weekDates[6], today)}
+            readOnly={isViewMode}
           />
         </div>
 
@@ -188,7 +192,7 @@ export function WeekView() {
               </button>
             )}
             <Link
-              to={`/month/${format(weekStart, 'yyyy-MM')}`}
+              to={`/month/${format(weekStart, 'yyyy-MM')}${isViewMode ? '?view' : ''}`}
               className="px-4 py-2 rounded-lg border hover:bg-gray-50"
             >
               Month View
@@ -230,7 +234,7 @@ export function WeekView() {
         />
       )}
 
-      {editingDate && (
+      {!isViewMode && editingDate && (
         <EditDayModal
           date={editingDate}
           schedule={
@@ -251,7 +255,7 @@ export function WeekView() {
         />
       )}
 
-      {showAddActivity && (
+      {!isViewMode && showAddActivity && (
         <AddActivityModal
           onSave={(activity) => createActivity.mutate(activity)}
           onClose={() => setShowAddActivity(false)}
@@ -260,12 +264,14 @@ export function WeekView() {
       )}
 
       {/* AI Assistant */}
-      <AIAssistant
-        people={people}
-        activities={activities}
-        currentWeekStart={weekStart}
-        schedules={weekData?.days.filter((d): d is DaySchedule => d !== null)}
-      />
+      {!isViewMode && (
+        <AIAssistant
+          people={people}
+          activities={activities}
+          currentWeekStart={weekStart}
+          schedules={weekData?.days.filter((d): d is DaySchedule => d !== null)}
+        />
+      )}
     </div>
   );
 }

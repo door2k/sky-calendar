@@ -16,6 +16,7 @@ interface DayCardProps {
   isToday?: boolean;
   isLastFriday?: boolean; // When true, render like Saturday
   lastFridaySchedule?: SaturdaySchedule | null; // Schedule for last Friday
+  readOnly?: boolean;
 }
 
 export function DayCard({
@@ -29,6 +30,7 @@ export function DayCard({
   isToday = false,
   isLastFriday = false,
   lastFridaySchedule,
+  readOnly = false,
 }: DayCardProps) {
   const dayName = format(date, 'EEEE').toUpperCase();
   const dayNumber = format(date, 'd');
@@ -73,8 +75,8 @@ export function DayCard({
 
     return (
       <div
-        onClick={onEdit}
-        className={`rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow ${
+        onClick={readOnly ? undefined : onEdit}
+        className={`rounded-lg p-4 ${readOnly ? '' : 'cursor-pointer hover:shadow-md'} transition-shadow ${
           isSat ? 'col-span-full' : ''
         } ${isToday ? 'ring-4 ring-yellow-400 shadow-lg' : ''}`}
         style={{ backgroundColor: 'var(--color-saturday)' }}
@@ -156,8 +158,8 @@ export function DayCard({
 
   return (
     <div
-      onClick={onEdit}
-      className={`rounded-lg overflow-hidden cursor-pointer hover:shadow-md transition-shadow ${
+      onClick={readOnly ? undefined : onEdit}
+      className={`rounded-lg overflow-hidden ${readOnly ? '' : 'cursor-pointer hover:shadow-md'} transition-shadow ${
         isNoGan ? 'ring-2 ring-orange-400' : ''
       } ${isToday ? 'ring-4 ring-yellow-400 shadow-lg' : ''}`}
       style={{ backgroundColor: isNoGan ? 'var(--color-no-gan)' : 'white' }}
