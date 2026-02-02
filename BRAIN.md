@@ -1,6 +1,6 @@
 # Sky's Schedule Calendar - Project Brain
 
-> **Last Updated:** 2026-01-28
+> **Last Updated:** 2026-02-02
 > **Status:** Active Development
 > **Live URL:** https://sky-calendar.vercel.app
 
@@ -40,6 +40,8 @@ The user expects Claude to be proactive about connecting to these services rathe
 - `VITE_SUPABASE_URL` - Supabase project URL
 - `VITE_SUPABASE_ANON_KEY` - Supabase anonymous key
 - `ANTHROPIC_API_KEY` - Claude API key (for AI assistant)
+- `SUPABASE_URL` - Supabase project URL (non-VITE, for API routes)
+- `SUPABASE_ANON_KEY` - Supabase anon key (non-VITE, for API routes)
 
 ## Database Schema
 
@@ -50,14 +52,14 @@ The user expects Claude to be proactive about connecting to these services rathe
    - Current people: Asaf (Aba), Tamir (Aba), Gili & Yossi (Savta & Saba), Simcha (Savta), Maya (Babysitter)
 
 2. **activities** - Recurring or one-time activities
-   - id (uuid), name, address, maps_url, contact_phone, note, is_recurring, recurrence_day, default_time, created_at
+   - id (uuid), name, name_he, address, address_he, maps_url, contact_phone, note, note_he, is_recurring, recurrence_day, default_time, created_at
 
 3. **day_schedules** - Weekday schedules (Sun-Fri ONLY)
-   - id, date, dropoff_person_id, pickup_person_id, bedtime_person_id, after_gan_activity_id, after_gan_time, gan_activity, is_no_gan, no_gan_reason, notes, created_at, updated_at
+   - id, date, dropoff_person_id, pickup_person_id, bedtime_person_id, after_gan_activity_id, after_gan_time, gan_activity, gan_activity_he, is_no_gan, no_gan_reason, no_gan_reason_he, notes, notes_he, created_at, updated_at
    - **Friday-specific:** family_dinner_person_id, family_dinner_time (default "16:00")
 
 4. **saturday_schedules** - Saturday schedules AND last Friday of month (DIFFERENT structure - no Gan)
-   - id, date, **activities** (JSONB array of `{activity_id, time}`), notes, created_at, updated_at
+   - id, date, **activities** (JSONB array of `{activity_id, time}`), **activities_he** (JSONB), notes, notes_he, created_at, updated_at
    - **Last Friday-specific:** family_dinner_person_id, family_dinner_time (default "16:00")
    - **CRITICAL:** Saturday uses `activities` JSONB array, NOT `after_gan_activity_id`
 
@@ -113,7 +115,8 @@ This caused bugs - document it clearly:
 ```
 sky-calendar/
 ├── api/
-│   └── assistant.ts        # Claude API serverless function (edge runtime)
+│   ├── assistant.ts        # Claude API serverless function (edge runtime)
+│   └── translate.ts        # EN→HE translation endpoint (Claude Sonnet)
 ├── src/
 │   ├── components/
 │   │   ├── AIAssistant.tsx  # AI chat interface + action executor
@@ -129,6 +132,8 @@ sky-calendar/
 │   │   └── useTheme.ts
 │   ├── lib/
 │   │   ├── supabase.ts      # Supabase client
+│   │   ├── translate.ts     # Client-side translation helpers
+│   │   ├── i18n-field.ts    # lf() helper for lang-aware field access
 │   │   ├── themes.ts        # Theme definitions
 │   │   └── scheduleParser.ts # (legacy, not used)
 │   ├── pages/
@@ -181,6 +186,34 @@ Actions are sorted before execution to handle dependencies:
 4. `delete_activity` (3)
 5. `update_saturday` (4) - Uses activity ID from step 1
 6. `message` (5)
+
+## Translation System (EN→HE)
+
+Free-form text is auto-translated to Hebrew on save using a translate-then-save pattern.
+
+### How It Works
+1. User saves a schedule/activity in the UI
+2. React Query mutation hooks intercept the save
+3. Calls `/api/translate` with the English text fields
+4. `/api/translate` calls Claude Sonnet with a name map (Tamir=טמיר, Asaf=אסף, etc.)
+5. Both EN and HE values are upserted to Supabase atomically
+6. Hebrew view reads `_he` columns via `lf(obj, field, lang)` helper
+
+### Key Files
+- `api/translate.ts` — Vercel edge function, calls Claude for translation
+- `src/lib/translate.ts` — `translateFields()` and `translateSaturdayActivities()` client helpers
+- `src/lib/i18n-field.ts` — `lf(obj, field, lang)` returns `obj[field_he]` or `obj[field]` based on lang
+
+### Translated Fields
+| Table | Fields |
+|-------|--------|
+| `day_schedules` | `gan_activity_he`, `no_gan_reason_he`, `notes_he` |
+| `saturday_schedules` | `notes_he`, `activities_he` (JSONB with `custom_name_he`) |
+| `activities` | `name_he`, `note_he`, `address_he` |
+
+### Fallback Behavior
+- If translation fails (network error, API error), save proceeds without Hebrew — English is shown as fallback
+- Static dictionary translations in `i18n.tsx` are overridden by DB Hebrew values when available
 
 ## Current State
 
@@ -256,7 +289,17 @@ npx vercel logs sky-calendar.vercel.app --since 5m
 
 ## Changelog
 
-### 2026-01-28 (Latest Session)
+### 2026-02-02
+- **Auto-translate to Hebrew on save**: Free-form text (gan activities, notes, activity names/addresses) auto-translated via Claude Sonnet before saving to Supabase
+  - New endpoint: `api/translate.ts` (Vercel edge function)
+  - New helpers: `src/lib/translate.ts`, `src/lib/i18n-field.ts`
+  - Modified hooks: `useSchedule.ts`, `useActivities.ts` — translate before upsert
+  - Modified components: `DayCard.tsx`, `ActivityPopup.tsx`, `MonthView.tsx`, print views — use `lf()` for Hebrew field access
+  - Added `_he` columns to all 3 tables (day_schedules, saturday_schedules, activities)
+  - Ran one-time migration to backfill existing data (29 days, 4 saturdays, 19 activities)
+  - Added `SUPABASE_URL` and `SUPABASE_ANON_KEY` env vars to Vercel (non-VITE prefix for API routes)
+
+### 2026-01-28
 - **Major print view redesign** (`PrintWeek.tsx`, `PrintCombined.tsx`):
   - Fixed image loading: now waits for all images to load before triggering print dialog
   - Fixed data mismatch: last Friday correctly shows as no-gan and sources family dinner from `saturday_schedules`
