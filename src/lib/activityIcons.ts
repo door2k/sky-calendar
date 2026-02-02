@@ -1,7 +1,25 @@
 // Maps activity names to topic-related emoji icons.
 // Called at activity creation/save time to assign an icon.
 
+// Exact-match rules checked first (full words only via word-boundary regex)
+const EXACT_RULES: Array<{ keywords: string[]; icon: string }> = [
+  // Short Hebrew words that cause false substring matches
+  { keywords: ['ים'], icon: '🏖️' },          // sea — but not מטוסים
+  { keywords: ['גן חיות'], icon: '🦁' },      // zoo
+];
+
+// Substring-match rules checked in order — put specific terms before generic ones
 const ICON_RULES: Array<{ keywords: string[]; icon: string }> = [
+  // High-priority: specific multi-word or easily-confused terms
+  { keywords: ['show and tell'], icon: '🎪' },
+  { keywords: ['birthday', 'יום הולדת', 'יומולדת'], icon: '🎂' },
+  { keywords: ['pizza', 'פיצה'], icon: '🍕' },
+  { keywords: ['party', 'מסיבה'], icon: '🎉' },
+  { keywords: ['safari'], icon: '🦒' },
+  { keywords: ['plane', 'planes', 'flying', 'מטוסים', 'מטוס', 'טיסה'], icon: '✈️' },
+  { keywords: ['bat', 'bats', 'עטלף', 'עטלפים'], icon: '🦇' },
+  { keywords: ['playdate', 'play date', 'play dating'], icon: '👫' },
+
   // Sports & Physical
   { keywords: ['soccer', 'football', 'כדורגל'], icon: '⚽' },
   { keywords: ['basketball', 'כדורסל'], icon: '🏀' },
@@ -35,9 +53,7 @@ const ICON_RULES: Array<{ keywords: string[]; icon: string }> = [
   { keywords: ['lesson', 'class', 'tutor', 'שיעור'], icon: '📝' },
 
   // Social & Events
-  { keywords: ['birthday', 'יום הולדת', 'יומולדת'], icon: '🎂' },
-  { keywords: ['party', 'מסיבה'], icon: '🎉' },
-  { keywords: ['playdate', 'play date', 'friend', 'חבר', 'משחק'], icon: '👫' },
+  { keywords: ['friend', 'חבר', 'משחק'], icon: '👫' },
   { keywords: ['park', 'playground', 'גן משחקים', 'פארק'], icon: '🛝' },
   { keywords: ['zoo', 'גן חיות'], icon: '🦁' },
   { keywords: ['circus', 'קרקס'], icon: '🎪' },
@@ -45,15 +61,14 @@ const ICON_RULES: Array<{ keywords: string[]; icon: string }> = [
   { keywords: ['show', 'performance', 'הופעה', 'הצגה'], icon: '🎪' },
 
   // Food
-  { keywords: ['pizza', 'פיצה'], icon: '🍕' },
   { keywords: ['ice cream', 'גלידה'], icon: '🍦' },
   { keywords: ['cook', 'baking', 'בישול', 'אפייה'], icon: '👨‍🍳' },
   { keywords: ['restaurant', 'מסעדה'], icon: '🍽️' },
 
   // Nature & Outdoors
-  { keywords: ['beach', 'sea', 'חוף', 'ים'], icon: '🏖️' },
+  { keywords: ['beach', 'sea', 'חוף'], icon: '🏖️' },
   { keywords: ['hike', 'hiking', 'nature', 'טיול', 'טבע'], icon: '🥾' },
-  { keywords: ['garden', 'plant', 'גינה', 'שתילה'], icon: '🌱' },
+  { keywords: ['garden', 'plant', 'planting', 'גינה', 'שתילה', 'נטיעה'], icon: '🌱' },
   { keywords: ['animal', 'pet', 'חיה', 'חיות'], icon: '🐾' },
   { keywords: ['horse', 'riding', 'סוס', 'רכיבה'], icon: '🐴' },
 
@@ -61,16 +76,28 @@ const ICON_RULES: Array<{ keywords: string[]; icon: string }> = [
   { keywords: ['doctor', 'dentist', 'medical', 'רופא', 'שיניים', 'רפואי'], icon: '🏥' },
   { keywords: ['haircut', 'hair', 'תספורת', 'שיער'], icon: '💇' },
   { keywords: ['shop', 'shopping', 'קניות'], icon: '🛍️' },
-  { keywords: ['travel', 'trip', 'flight', 'נסיעה', 'טיסה'], icon: '✈️' },
+  { keywords: ['travel', 'trip', 'flight', 'נסיעה'], icon: '✈️' },
   { keywords: ['sleep', 'nap', 'שינה', 'תנומה'], icon: '😴' },
   { keywords: ['photo', 'camera', 'צילום', 'מצלמה'], icon: '📸' },
-  { keywords: ['bat', 'bats', 'עטלף', 'עטלפים'], icon: '🦇' },
 ];
 
 const DEFAULT_ICON = '🎯';
 
 export function getActivityIcon(name: string): string {
   const lower = name.toLowerCase();
+
+  // Check exact word-boundary matches first (for short words that cause false positives)
+  for (const rule of EXACT_RULES) {
+    for (const keyword of rule.keywords) {
+      // For Hebrew: check the keyword is surrounded by spaces or start/end of string
+      const re = new RegExp(`(?:^|\\s|[^\\u0590-\\u05FF])${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:$|\\s|[^\\u0590-\\u05FF])`);
+      if (re.test(lower)) {
+        return rule.icon;
+      }
+    }
+  }
+
+  // Check substring matches in priority order
   for (const rule of ICON_RULES) {
     for (const keyword of rule.keywords) {
       if (lower.includes(keyword)) {
