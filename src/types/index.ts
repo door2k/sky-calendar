@@ -26,22 +26,22 @@ export interface Activity {
 export interface DaySchedule {
   id: string;
   date: string; // ISO date string YYYY-MM-DD
-  dropoff_person_id?: string;
-  gan_activity?: string;
-  pickup_person_id?: string;
-  after_gan_activity_id?: string;
-  after_gan_time?: string;
-  bedtime_person_id?: string;
+  dropoff_person_id?: string | null;
+  gan_activity?: string | null;
+  pickup_person_id?: string | null;
+  after_gan_activity_id?: string | null;
+  after_gan_time?: string | null;
+  bedtime_person_id?: string | null;
   is_no_gan: boolean;
-  no_gan_reason?: string;
-  notes?: string;
-  gan_activity_he?: string;
-  no_gan_reason_he?: string;
-  notes_he?: string;
+  no_gan_reason?: string | null;
+  notes?: string | null;
+  gan_activity_he?: string | null;
+  no_gan_reason_he?: string | null;
+  notes_he?: string | null;
   created_by?: string;
   updated_by?: string;
-  family_dinner_person_id?: string; // For Friday family dinner
-  family_dinner_time?: string; // Default "16:00"
+  family_dinner_person_id?: string | null;
+  family_dinner_time?: string | null;
 }
 
 export interface SaturdayActivity {
@@ -55,13 +55,13 @@ export interface SaturdaySchedule {
   id: string;
   date: string;
   activities: SaturdayActivity[];
-  notes?: string;
-  notes_he?: string;
+  notes?: string | null;
+  notes_he?: string | null;
   activities_he?: SaturdayActivity[];
   created_by?: string;
   updated_by?: string;
-  family_dinner_person_id?: string; // For last Friday family dinner
-  family_dinner_time?: string; // Default "16:00"
+  family_dinner_person_id?: string | null;
+  family_dinner_time?: string | null;
 }
 
 export interface Settings {
