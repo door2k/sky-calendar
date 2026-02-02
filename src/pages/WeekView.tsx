@@ -259,7 +259,7 @@ export function WeekView() {
 
       {!isViewMode && showAddActivity && (
         <AddActivityModal
-          onSave={(activity) => createActivity.mutate(activity)}
+          onSave={async (activity) => { await createActivity.mutateAsync(activity); }}
           onClose={() => setShowAddActivity(false)}
           people={people}
         />

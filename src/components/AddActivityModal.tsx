@@ -3,7 +3,7 @@ import type { Activity, Person } from '../types';
 import { useI18n } from '../lib/i18n';
 
 interface AddActivityModalProps {
-  onSave: (activity: Omit<Activity, 'id'>) => void;
+  onSave: (activity: Omit<Activity, 'id'>) => Promise<void>;
   onClose: () => void;
   people?: Person[];
 }
@@ -32,21 +32,32 @@ export function AddActivityModal({ onSave, onClose, people = [] }: AddActivityMo
     { value: 'Friday', label: t('friday') },
   ];
 
-  const handleSave = () => {
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const handleSave = async () => {
     if (!name.trim()) return;
 
-    onSave({
-      name: name.trim(),
-      address: address.trim() || undefined,
-      maps_url: address.trim() ? generateMapsUrl(address.trim()) : undefined,
-      contact_phone: contactPhone.trim() || undefined,
-      note: note.trim() || undefined,
-      is_recurring: isRecurring,
-      recurrence_day: isRecurring && recurrenceDay ? recurrenceDay.toLowerCase() : undefined,
-      default_time: isRecurring && defaultTime ? defaultTime : undefined,
-      created_by: createdBy || undefined,
-    });
-    onClose();
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await onSave({
+        name: name.trim(),
+        address: address.trim() || undefined,
+        maps_url: address.trim() ? generateMapsUrl(address.trim()) : undefined,
+        contact_phone: contactPhone.trim() || undefined,
+        note: note.trim() || undefined,
+        is_recurring: isRecurring,
+        recurrence_day: isRecurring && recurrenceDay ? recurrenceDay.toLowerCase() : undefined,
+        default_time: isRecurring && defaultTime ? defaultTime : undefined,
+        created_by: createdBy || undefined,
+      });
+      onClose();
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Save failed');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -166,6 +177,9 @@ export function AddActivityModal({ onSave, onClose, people = [] }: AddActivityMo
               </select>
             </div>
           )}
+          {saveError && (
+            <div className="text-red-600 text-sm mb-2">{saveError}</div>
+          )}
           <div className="flex gap-2">
             <button
               onClick={onClose}
@@ -175,11 +189,11 @@ export function AddActivityModal({ onSave, onClose, people = [] }: AddActivityMo
             </button>
             <button
               onClick={handleSave}
-              disabled={!name.trim()}
+              disabled={!name.trim() || saving}
               className="flex-1 px-4 py-2 rounded-lg text-white disabled:opacity-50"
               style={{ backgroundColor: 'var(--color-primary)' }}
             >
-              {t('save')}
+              {saving ? t('saving') : t('save')}
             </button>
           </div>
         </div>
