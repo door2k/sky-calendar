@@ -460,6 +460,12 @@ const LANG_STORAGE_KEY = 'sky-calendar-lang';
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Language>(() => {
+    // URL param takes priority, then localStorage, then default 'en'
+    const urlLang = new URLSearchParams(window.location.search).get('lang');
+    if (urlLang === 'he' || urlLang === 'en') {
+      localStorage.setItem(LANG_STORAGE_KEY, urlLang);
+      return urlLang;
+    }
     const stored = localStorage.getItem(LANG_STORAGE_KEY);
     return (stored === 'he' || stored === 'en') ? stored : 'en';
   });
@@ -467,6 +473,14 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const setLang = useCallback((newLang: Language) => {
     setLangState(newLang);
     localStorage.setItem(LANG_STORAGE_KEY, newLang);
+    // Update URL param
+    const url = new URL(window.location.href);
+    if (newLang === 'en') {
+      url.searchParams.delete('lang');
+    } else {
+      url.searchParams.set('lang', newLang);
+    }
+    window.history.replaceState({}, '', url.toString());
   }, []);
 
   const t = useCallback((key: TranslationKey): string => {
