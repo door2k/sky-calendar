@@ -372,6 +372,7 @@ const NAME_MAP_HE: Record<string, string> = {
   'Tamir': 'טמיר',
   'Gili & Yossi': 'גילי ויוסי',
   'Simcha': 'שמחה',
+  'Simcha & Tamir': 'שמחה וטמיר',
   'Maya': 'מאיה',
 };
 
@@ -381,6 +382,7 @@ const ROLE_MAP_HE: Record<string, string> = {
   'Savta & Saba': 'סבתא וסבא',
   'Savta': 'סבתא',
   'Saba': 'סבא',
+  'Savta & Aba': 'סבתא ואבא',
   'Babysitter': 'בייביסיטר',
 };
 
