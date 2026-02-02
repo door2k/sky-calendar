@@ -106,7 +106,7 @@ export function DayCard({
                     if (activity) onActivityClick(activity);
                   }}
                 >
-                  <span>🎯</span>
+                  <span>{activity?.icon || '🎯'}</span>
                   <span className={activity ? 'cursor-pointer hover:underline' : ''}>
                     {act.custom_name ? translateActivity(act.custom_name, scheduleToUse?.activities_he?.[idx]?.custom_name_he) : activity?.name ? translateActivity(activity.name, activity.name_he) : t('activity')}
                   </span>
@@ -208,7 +208,7 @@ export function DayCard({
           </div>
 
           <div className="flex items-center gap-2 p-2 rounded bg-gray-50">
-            <span>🎯</span>
+            <span>{afterGanActivity?.icon || '🎯'}</span>
             {afterGanActivity ? (
               <span
                 className="cursor-pointer hover:underline"
@@ -240,7 +240,7 @@ export function DayCard({
                   onActivityClick(activity);
                 }}
               >
-                <span className="text-purple-600">○</span>
+                <span className="text-purple-600">{activity.icon || '○'}</span>
                 <span className="cursor-pointer hover:underline text-purple-700">
                   {translateActivity(activity.name, activity.name_he)}
                   {activity.default_time && (

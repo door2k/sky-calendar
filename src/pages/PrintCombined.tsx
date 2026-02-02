@@ -293,13 +293,13 @@ export function PrintCombined() {
                 {activity && (
                   <div className="p-1 rounded text-center text-white font-medium"
                     style={{ backgroundColor: 'var(--color-primary)', fontSize: '8px' }}>
-                    🎯 {translateActivity(activity.name, activity.name_he)}
+                    {activity.icon || '🎯'} {translateActivity(activity.name, activity.name_he)}
                   </div>
                 )}
                 {recurringActivities.map((act) => (
                   <div key={act.id} className="p-1 rounded text-center text-white font-medium"
                     style={{ backgroundColor: 'var(--color-primary)', fontSize: '8px' }}>
-                    🎯 {translateActivity(act.name, act.name_he)}
+                    {act.icon || '🎯'} {translateActivity(act.name, act.name_he)}
                   </div>
                 ))}
 

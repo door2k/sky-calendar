@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import type { Activity } from '../types';
 import { translateFields } from '../lib/translate';
+import { getActivityIcon } from '../lib/activityIcons';
 
 export function useActivities() {
   return useQuery({
@@ -23,6 +24,11 @@ export function useCreateActivity() {
 
   return useMutation({
     mutationFn: async (activity: Omit<Activity, 'id'>) => {
+      // Auto-assign icon based on activity name
+      if (activity.name && !activity.icon) {
+        (activity as any).icon = getActivityIcon(activity.name);
+      }
+
       const toTranslate: Record<string, string> = {};
       if (activity.name) toTranslate.name = activity.name;
       if (activity.note) toTranslate.note = activity.note;
@@ -54,6 +60,11 @@ export function useUpdateActivity() {
 
   return useMutation({
     mutationFn: async (activity: Partial<Activity> & { id: string }) => {
+      // Re-assign icon if name changed
+      if (activity.name) {
+        activity.icon = getActivityIcon(activity.name);
+      }
+
       const toTranslate: Record<string, string> = {};
       if (activity.name) toTranslate.name = activity.name;
       if (activity.note) toTranslate.note = activity.note;

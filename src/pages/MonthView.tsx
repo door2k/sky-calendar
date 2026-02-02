@@ -253,7 +253,7 @@ export function MonthView() {
                         }}
                       >
                         <span className="text-blue-600 hover:underline cursor-pointer">
-                          🎯 {translateActivity(getActivityById(schedule.after_gan_activity_id)?.name || ''  , getActivityById(schedule.after_gan_activity_id)?.name_he)}
+                          {getActivityById(schedule.after_gan_activity_id)?.icon || '🎯'} {translateActivity(getActivityById(schedule.after_gan_activity_id)?.name || ''  , getActivityById(schedule.after_gan_activity_id)?.name_he)}
                         </span>
                       </div>
                     )}
@@ -271,7 +271,7 @@ export function MonthView() {
                           }}
                         >
                           <span className="text-purple-600 hover:underline cursor-pointer">
-                            ○ {translateActivity(activity.name)}
+                            {activity.icon || '○'} {translateActivity(activity.name)}
                           </span>
                         </div>
                       ))}
@@ -289,7 +289,7 @@ export function MonthView() {
                           }}
                         >
                           <span className="text-blue-600 hover:underline cursor-pointer">
-                            🎯 {translateActivity(act.custom_name || activity?.name || ''  , satSchedule?.activities_he?.[idx]?.custom_name_he || activity?.name_he)}
+                            {activity?.icon || '🎯'} {translateActivity(act.custom_name || activity?.name || ''  , satSchedule?.activities_he?.[idx]?.custom_name_he || activity?.name_he)}
                           </span>
                         </div>
                       );

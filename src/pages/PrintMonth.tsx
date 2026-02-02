@@ -274,7 +274,7 @@ export function PrintMonth() {
                         className="text-xs px-1.5 py-0.5 rounded-full truncate text-white font-medium"
                         style={{ backgroundColor: 'var(--color-primary)' }}
                       >
-                        🎯 {translateActivity(assignedActivity.name, assignedActivity.name_he)}
+                        {assignedActivity.icon || '🎯'} {translateActivity(assignedActivity.name, assignedActivity.name_he)}
                       </div>
                     )}
 
@@ -284,7 +284,7 @@ export function PrintMonth() {
                         key={activity.id}
                         className="text-xs px-1.5 py-0.5 rounded-full truncate bg-purple-200 text-purple-800 font-medium"
                       >
-                        ○ {translateActivity(activity.name, activity.name_he)}
+                        {activity.icon || '○'} {translateActivity(activity.name, activity.name_he)}
                       </div>
                     ))}
 
@@ -297,7 +297,7 @@ export function PrintMonth() {
                             key={idx}
                             className="text-xs px-1.5 py-0.5 rounded-full truncate bg-purple-500 text-white font-medium"
                           >
-                            🎯 {translateActivity(act.custom_name || activity?.name || '')}
+                            {activity?.icon || '🎯'} {translateActivity(act.custom_name || activity?.name || '')}
                           </div>
                         );
                       })}

@@ -267,7 +267,7 @@ export function PrintWeek() {
                 {activity && (
                   <div className="p-1.5 rounded-lg text-center font-medium text-xs"
                     style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
-                    🎯 {translateActivity(activity.name, activity.name_he)}
+                    {activity.icon || '🎯'} {translateActivity(activity.name, activity.name_he)}
                     {day?.after_gan_time && (
                       <div className="text-xs opacity-80">{day.after_gan_time}</div>
                     )}
@@ -276,7 +276,7 @@ export function PrintWeek() {
                 {recurringActivities.map((act) => (
                   <div key={act.id} className="p-1.5 rounded-lg text-center font-medium text-xs"
                     style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
-                    🎯 {translateActivity(act.name, act.name_he)}
+                    {act.icon || '🎯'} {translateActivity(act.name, act.name_he)}
                     {act.default_time && (
                       <div className="text-xs opacity-80">{act.default_time}</div>
                     )}
@@ -326,7 +326,7 @@ export function PrintWeek() {
                 const activity = getActivity(act.activity_id);
                 return (
                   <div key={idx} className="bg-white/80 rounded-xl p-3 text-center shadow">
-                    <span className="text-2xl">🎯</span>
+                    <span className="text-2xl">{activity?.icon || '🎯'}</span>
                     <div className="font-bold text-purple-800">{translateActivity(act.custom_name || activity?.name || '')}</div>
                     {act.time && <div className="text-sm text-purple-600">{act.time}</div>}
                   </div>

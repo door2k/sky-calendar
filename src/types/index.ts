@@ -20,6 +20,7 @@ export interface Activity {
   recurrence_day?: string; // e.g., "wednesday"
   default_time?: string; // e.g., "17:15"
   created_by?: string;
+  icon?: string; // Emoji icon based on activity topic
 }
 
 export interface DaySchedule {
