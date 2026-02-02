@@ -52,7 +52,7 @@ The user expects Claude to be proactive about connecting to these services rathe
    - Current people: Asaf (Aba), Tamir (Aba), Gili & Yossi (Savta & Saba), Simcha (Savta), Maya (Babysitter)
 
 2. **activities** - Recurring or one-time activities
-   - id (uuid), name, name_he, address, address_he, maps_url, contact_phone, note, note_he, is_recurring, recurrence_day, default_time, created_at
+   - id (uuid), name, name_he, address, address_he, maps_url, contact_phone, note, note_he, icon, is_recurring, recurrence_day, default_time, created_at
 
 3. **day_schedules** - Weekday schedules (Sun-Fri ONLY)
    - id, date, dropoff_person_id, pickup_person_id, bedtime_person_id, after_gan_activity_id, after_gan_time, gan_activity, gan_activity_he, is_no_gan, no_gan_reason, no_gan_reason_he, notes, notes_he, created_at, updated_at
@@ -66,7 +66,7 @@ The user expects Claude to be proactive about connecting to these services rathe
 
 6. **schedule_audit_log** - Audit trail for all schedule/activity changes
    - id (serial), table_name, record_date, action (INSERT/UPDATE/DELETE), old_data (JSONB), new_data (JSONB), changed_by, created_at
-   - Populated by `log_schedule_change()` trigger on day_schedules, saturday_schedules, activities
+   - Populated by `log_schedule_change()` trigger on day_schedules/saturday_schedules and `log_activity_change()` trigger on activities
 5. **settings** - App settings
    - current_theme, theme_randomized_week, previous_week_theme
 
@@ -300,6 +300,9 @@ npx vercel logs sky-calendar.vercel.app --since 5m
   - **Fix:** Both `useUpdateDaySchedule` and `useUpdateSaturdaySchedule` now fetch the existing row, merge with spread operator (`{ ...existing, ...schedule }`), then upsert the merged object.
 - **Added `schedule_audit_log` table + triggers** on `day_schedules`, `saturday_schedules`, and `activities` tables. All INSERT/UPDATE/DELETE operations are logged with old_data and new_data JSONB columns.
 - **Restored bats event** (`after_gan_activity_id`, `after_gan_time`) for Feb 2.
+- **Fixed Hebrew input in ActivityAutocomplete** (`EditDayModal.tsx`): handleInputChange now matches translated activity names; added `isTypingRef` to prevent useEffect from clearing text during Hebrew IME composition.
+- **Added `icon` column to `activities` table**: `useCreateActivity` was setting `icon` field but column did not exist in DB, causing silent INSERT failures.
+- **Fixed audit trigger on activities table**: `log_schedule_change()` referenced `NEW.date` which does not exist on activities. Created separate `log_activity_change()` function without date reference.
 
 ### 2026-02-02
 - **Auto-translate to Hebrew on save**: Free-form text (gan activities, notes, activity names/addresses) auto-translated via Claude Sonnet before saving to Supabase
