@@ -47,18 +47,18 @@ export function DayCard({
   // Determine if this day should be rendered like Saturday
   const renderAsSaturdayStyle = isSat || isLastFri;
 
-  const getPerson = (id?: string): Person | null => {
+  const getPerson = (id?: string | null): Person | null => {
     if (!id) return null;
     return people.find((p) => p.id === id) || null;
   };
 
-  const renderPerson = (id?: string) => {
+  const renderPerson = (id?: string | null) => {
     const person = getPerson(id);
     if (!person) return <span>—</span>;
     return <PersonAvatar person={person} size="sm" translateName={translateName} />;
   };
 
-  const getActivity = (id?: string) => {
+  const getActivity = (id?: string | null) => {
     if (!id) return null;
     return activities.find((a) => a.id === id);
   };

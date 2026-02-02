@@ -404,6 +404,15 @@ export function EditDayModal({
                             <option key={p.id} value={p.id}>{translateName(p.name)}</option>
                           ))}
                         </select>
+                        {familyDinnerPersonId && (
+                          <button
+                            onClick={() => { setFamilyDinnerPersonId(''); setFamilyDinnerTime(''); }}
+                            className="text-red-500 hover:text-red-700 text-lg"
+                            title={t('remove')}
+                          >
+                            ×
+                          </button>
+                        )}
                       </div>
                     </div>
                     <div>
@@ -437,18 +446,38 @@ export function EditDayModal({
                       <option key={p.id} value={p.id}>{translateName(p.name)}</option>
                     ))}
                   </select>
+                  {dropoffPersonId && (
+                    <button
+                      onClick={() => setDropoffPersonId('')}
+                      className="text-red-500 hover:text-red-700 text-lg"
+                      title={t('remove')}
+                    >
+                      ×
+                    </button>
+                  )}
                 </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium mb-1">{t('gan_activity')}</label>
-                <input
-                  type="text"
-                  value={ganActivity}
-                  onChange={(e) => setGanActivity(e.target.value)}
-                  className="w-full border rounded-lg p-2"
-                  placeholder={t('gan_activity_placeholder')}
-                />
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={ganActivity}
+                    onChange={(e) => setGanActivity(e.target.value)}
+                    className="flex-1 border rounded-lg p-2"
+                    placeholder={t('gan_activity_placeholder')}
+                  />
+                  {ganActivity && (
+                    <button
+                      onClick={() => setGanActivity('')}
+                      className="text-red-500 hover:text-red-700 text-lg"
+                      title={t('remove')}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div>
@@ -467,6 +496,15 @@ export function EditDayModal({
                       <option key={p.id} value={p.id}>{translateName(p.name)}</option>
                     ))}
                   </select>
+                  {pickupPersonId && (
+                    <button
+                      onClick={() => setPickupPersonId('')}
+                      className="text-red-500 hover:text-red-700 text-lg"
+                      title={t('remove')}
+                    >
+                      ×
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -525,6 +563,15 @@ export function EditDayModal({
                       <option key={p.id} value={p.id}>{translateName(p.name)}</option>
                     ))}
                   </select>
+                  {bedtimePersonId && (
+                    <button
+                      onClick={() => setBedtimePersonId('')}
+                      className="text-red-500 hover:text-red-700 text-lg"
+                      title={t('remove')}
+                    >
+                      ×
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -583,6 +630,15 @@ export function EditDayModal({
                             <option key={p.id} value={p.id}>{translateName(p.name)}</option>
                           ))}
                         </select>
+                        {familyDinnerPersonId && (
+                          <button
+                            onClick={() => { setFamilyDinnerPersonId(''); setFamilyDinnerTime(''); }}
+                            className="text-red-500 hover:text-red-700 text-lg"
+                            title={t('remove')}
+                          >
+                            ×
+                          </button>
+                        )}
                       </div>
                     </div>
                     <div>
