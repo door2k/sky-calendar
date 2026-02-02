@@ -64,6 +64,7 @@ const ICON_RULES: Array<{ keywords: string[]; icon: string }> = [
   { keywords: ['travel', 'trip', 'flight', 'נסיעה', 'טיסה'], icon: '✈️' },
   { keywords: ['sleep', 'nap', 'שינה', 'תנומה'], icon: '😴' },
   { keywords: ['photo', 'camera', 'צילום', 'מצלמה'], icon: '📸' },
+  { keywords: ['bat', 'bats', 'עטלף', 'עטלפים'], icon: '🦇' },
 ];
 
 const DEFAULT_ICON = '🎯';
