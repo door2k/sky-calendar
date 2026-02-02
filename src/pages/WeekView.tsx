@@ -99,11 +99,11 @@ export function WeekView() {
     setWeekOffset(0);
   };
 
-  const handleSaveDay = (data: Partial<DaySchedule> | Partial<SaturdaySchedule>) => {
+  const handleSaveDay = async (data: Partial<DaySchedule> | Partial<SaturdaySchedule>) => {
     if ('activities' in data) {
-      updateSaturday.mutate(data as Partial<SaturdaySchedule> & { date: string });
+      await updateSaturday.mutateAsync(data as Partial<SaturdaySchedule> & { date: string });
     } else {
-      updateDay.mutate(data as Partial<DaySchedule> & { date: string });
+      await updateDay.mutateAsync(data as Partial<DaySchedule> & { date: string });
     }
   };
 

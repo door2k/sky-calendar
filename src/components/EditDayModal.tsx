@@ -127,7 +127,7 @@ interface EditDayModalProps {
   lastFridaySchedule?: SaturdaySchedule | null;
   people: Person[];
   activities: Activity[];
-  onSave: (data: Partial<DaySchedule> | Partial<SaturdaySchedule>) => void;
+  onSave: (data: Partial<DaySchedule> | Partial<SaturdaySchedule>) => void | Promise<void>;
   onClose: () => void;
   onCreateActivity: (name: string) => Promise<Activity>;
 }
@@ -185,6 +185,42 @@ export function EditDayModal({
   // Creator tracking state
   const [updatedBy, setUpdatedBy] = useState('');
 
+  const handleClearDay = async () => {
+    if (!window.confirm(t('clear_day_confirm'))) return;
+    if (useSaturdayStyle) {
+      const saveData: Partial<SaturdaySchedule> & { date: string } = {
+        date: dateStr,
+        activities: [],
+        activities_he: [],
+        notes: null,
+        notes_he: null,
+        family_dinner_person_id: null,
+        family_dinner_time: null,
+      };
+      await onSave(saveData);
+    } else {
+      const saveData: Partial<DaySchedule> & { date: string } = {
+        date: dateStr,
+        dropoff_person_id: null,
+        gan_activity: null,
+        gan_activity_he: null,
+        pickup_person_id: null,
+        after_gan_activity_id: null,
+        after_gan_time: null,
+        bedtime_person_id: null,
+        is_no_gan: false,
+        no_gan_reason: null,
+        no_gan_reason_he: null,
+        notes: null,
+        notes_he: null,
+        family_dinner_person_id: null,
+        family_dinner_time: null,
+      };
+      await onSave(saveData);
+    }
+    onClose();
+  };
+
   const NO_GAN_REASONS = [
     { value: 'Holiday', label: t('reason_holiday') },
     { value: 'Staff Training', label: t('reason_staff_training') },
@@ -215,14 +251,14 @@ export function EditDayModal({
       const saveData: Partial<SaturdaySchedule> & { date: string } = {
         date: dateStr,
         activities: resolvedActivities,
-        notes: satNotes || undefined,
+        notes: satNotes || null,
         updated_by: updatedBy || undefined,
       };
       if (isLastFri && !isSat) {
-        saveData.family_dinner_person_id = familyDinnerPersonId || undefined;
-        saveData.family_dinner_time = familyDinnerTime || undefined;
+        saveData.family_dinner_person_id = familyDinnerPersonId || null;
+        saveData.family_dinner_time = familyDinnerTime || null;
       }
-      onSave(saveData);
+      await onSave(saveData);
     } else {
       // Create pending after-gan activity if needed
       let resolvedActivityId = afterGanActivityId;
@@ -233,22 +269,22 @@ export function EditDayModal({
 
       const saveData: Partial<DaySchedule> & { date: string } = {
         date: dateStr,
-        dropoff_person_id: dropoffPersonId || undefined,
-        gan_activity: ganActivity || undefined,
-        pickup_person_id: pickupPersonId || undefined,
-        after_gan_activity_id: resolvedActivityId || undefined,
-        after_gan_time: afterGanTime || undefined,
-        bedtime_person_id: bedtimePersonId || undefined,
+        dropoff_person_id: dropoffPersonId || null,
+        gan_activity: ganActivity || null,
+        pickup_person_id: pickupPersonId || null,
+        after_gan_activity_id: resolvedActivityId || null,
+        after_gan_time: afterGanTime || null,
+        bedtime_person_id: bedtimePersonId || null,
         is_no_gan: isNoGan,
-        no_gan_reason: isNoGan ? noGanReason : undefined,
-        notes: notes || undefined,
+        no_gan_reason: isNoGan ? noGanReason : null,
+        notes: notes || null,
         updated_by: updatedBy || undefined,
       };
       if (isFri) {
-        saveData.family_dinner_person_id = familyDinnerPersonId || undefined;
-        saveData.family_dinner_time = familyDinnerTime || undefined;
+        saveData.family_dinner_person_id = familyDinnerPersonId || null;
+        saveData.family_dinner_time = familyDinnerTime || null;
       }
-      onSave(saveData);
+      await onSave(saveData);
     }
     onClose();
   };
@@ -436,15 +472,32 @@ export function EditDayModal({
 
               <div>
                 <label className="block text-sm font-medium mb-1">{t('after_gan_activity')}</label>
-                <ActivityAutocomplete
-                  activities={activities}
-                  value={afterGanActivityId}
-                  onChange={(id, newName) => {
-                    setAfterGanActivityId(id);
-                    setPendingAfterGanName(newName);
-                  }}
-                  placeholder={t('type_activity_name')}
-                />
+                <div className="flex items-center gap-2">
+                  <div className="flex-1">
+                    <ActivityAutocomplete
+                      activities={activities}
+                      value={afterGanActivityId}
+                      onChange={(id, newName) => {
+                        setAfterGanActivityId(id);
+                        setPendingAfterGanName(newName);
+                      }}
+                      placeholder={t('type_activity_name')}
+                    />
+                  </div>
+                  {(afterGanActivityId || pendingAfterGanName) && (
+                    <button
+                      onClick={() => {
+                        setAfterGanActivityId('');
+                        setPendingAfterGanName(null);
+                        setAfterGanTime('');
+                      }}
+                      className="text-red-500 hover:text-red-700 text-lg"
+                      title={t('remove')}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
                 {(afterGanActivityId || pendingAfterGanName) && (
                   <input
                     type="text"
@@ -563,6 +616,12 @@ export function EditDayModal({
             </select>
           </div>
           <div className="flex gap-2">
+            <button
+              onClick={handleClearDay}
+              className="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50"
+            >
+              {t('clear_day')}
+            </button>
             <button
               onClick={onClose}
               className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50"
