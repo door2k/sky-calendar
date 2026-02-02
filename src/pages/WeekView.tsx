@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { startOfWeek, addWeeks, addDays, format, parseISO, isSameDay } from 'date-fns';
 import { DayCard } from '../components/DayCard';
@@ -99,12 +100,16 @@ export function WeekView() {
     setWeekOffset(0);
   };
 
+  const queryClient = useQueryClient();
+
   const handleSaveDay = async (data: Partial<DaySchedule> | Partial<SaturdaySchedule>) => {
     if ('activities' in data) {
       await updateSaturday.mutateAsync(data as Partial<SaturdaySchedule> & { date: string });
     } else {
       await updateDay.mutateAsync(data as Partial<DaySchedule> & { date: string });
     }
+    // Wait for cache to refetch so reopening the modal shows fresh data
+    await queryClient.invalidateQueries({ queryKey: ['schedule'] });
   };
 
   const handlePrint = () => {
