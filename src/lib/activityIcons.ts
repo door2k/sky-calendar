@@ -79,3 +79,29 @@ export function getActivityIcon(name: string): string {
   }
   return DEFAULT_ICON;
 }
+
+/** Ask the AI to suggest an emoji for an activity name. */
+export async function suggestActivityIcon(name: string): Promise<string> {
+  const res = await fetch('/api/suggest-icon', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  });
+  if (!res.ok) throw new Error(`suggest-icon API returned ${res.status}`);
+  const { icon } = await res.json();
+  return icon || DEFAULT_ICON;
+}
+
+/**
+ * Get icon for an activity: keyword match first, AI fallback second.
+ * Always returns an icon (never the default target unless AI also fails).
+ */
+export async function resolveActivityIcon(name: string): Promise<string> {
+  const keywordIcon = getActivityIcon(name);
+  if (keywordIcon !== DEFAULT_ICON) return keywordIcon;
+  try {
+    return await suggestActivityIcon(name);
+  } catch {
+    return DEFAULT_ICON;
+  }
+}
