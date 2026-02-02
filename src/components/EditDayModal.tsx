@@ -34,9 +34,11 @@ function ActivityAutocomplete({
   }, []);
 
   // Sync text when value prop changes externally (e.g. cleared)
+  // Only reset text to '' if user hasn't typed anything (avoid clearing during Hebrew IME input)
+  const isTypingRef = useRef(false);
   useEffect(() => {
-    if (!value) setText('');
-    else {
+    if (!value && !isTypingRef.current) setText('');
+    else if (value) {
       const act = activities.find((a) => a.id === value);
       if (act) setText(translateActivity(act.name));
     }
@@ -49,6 +51,7 @@ function ActivityAutocomplete({
   const exactMatch = activities.find((a) => a.name.toLowerCase() === text.trim().toLowerCase() || translateActivity(a.name).toLowerCase() === text.trim().toLowerCase());
 
   const handleSelect = (activity: Activity) => {
+    isTypingRef.current = false;
     setText(translateActivity(activity.name));
     setShowSuggestions(false);
     setHighlightIdx(-1);
@@ -56,11 +59,12 @@ function ActivityAutocomplete({
   };
 
   const handleInputChange = (newText: string) => {
+    isTypingRef.current = true;
     setText(newText);
     setShowSuggestions(true);
     setHighlightIdx(-1);
     // If it matches an existing activity exactly, select it
-    const match = activities.find((a) => a.name.toLowerCase() === newText.trim().toLowerCase());
+    const match = activities.find((a) => a.name.toLowerCase() === newText.trim().toLowerCase() || translateActivity(a.name).toLowerCase() === newText.trim().toLowerCase());
     if (match) {
       onChange(match.id, null);
     } else {
