@@ -41,7 +41,6 @@ RULE: Always maintain a single, simple, robust, verbose python script combining 
 
 RULE: Use uv for package and environment management
 
-RULE: Use the beads skill for task management
 
 RULE: In all software designs, have no fallbacks. fail fast in failures
 
