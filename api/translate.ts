@@ -8,7 +8,7 @@ interface RequestBody {
   fields: Record<string, string>;
 }
 
-const NAME_MAP = 'Tamir=טמיר, Asaf=אסף, Ilay=אילי, Sky=סקיי, Gili=גילי, Yossi=יוסי, Simcha=שמחה, Maya=מאיה';
+const NAME_MAP = 'Tamir=טמיר, Asaf=אסף, Ilay=אילי, Sky=סקאי, Gili=גילי, Yossi=יוסי, Simcha=שמחה, Maya=מאיה';
 
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST') {

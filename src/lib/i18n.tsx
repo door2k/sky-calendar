@@ -186,7 +186,7 @@ const translations = {
   },
   he: {
     // WeekView
-    'skys_week': 'השבוע של סקיי',
+    'skys_week': 'השבוע של סקאי',
     'today': 'היום',
     'previous_week': 'שבוע קודם',
     'next_week': 'שבוע הבא',
@@ -199,7 +199,7 @@ const translations = {
     'print': 'הדפסה',
 
     // MonthView
-    'skys_month': 'החודש של סקיי',
+    'skys_month': 'החודש של סקאי',
 
     // Legend
     'gan_activity': 'פעילות בגן',
@@ -293,7 +293,7 @@ const translations = {
 
     // AI Assistant
     'schedule_assistant': 'עוזר לוח זמנים',
-    'ai_greeting': 'שלום! אני העוזר של סקיי ללוח הזמנים. ספר/י לי מה צריך בשפה פשוטה, למשל:\n\n"תקבע את טמיר לאיסוף ביום שני ושלישי"\n"תוסיף חוג היפ הופ בימי שני ב-16:30 בגן מאיר"\n"תסמן שישי בלי גן בגלל חג"',
+    'ai_greeting': 'שלום! אני העוזר של סקאי ללוח הזמנים. ספר/י לי מה צריך בשפה פשוטה, למשל:\n\n"תקבע את טמיר לאיסוף ביום שני ושלישי"\n"תוסיף חוג היפ הופ בימי שני ב-16:30 בגן מאיר"\n"תסמן שישי בלי גן בגלל חג"',
     'listening': 'מקשיב...',
     'tell_me_what_you_need': 'ספר/י לי מה צריך...',
     'thinking': 'חושב...',
@@ -329,9 +329,9 @@ const translations = {
     'tip_dual_avatar': 'טיפ: לרשומות כמו "גילי ויוסי" שמייצגות שני אנשים, השתמשו בשדה "תמונה שנייה" כדי להציג את שתי התמונות זו לצד זו.',
 
     // Print views
-    'skys_awesome_week': 'השבוע המדהים של סקיי!',
-    'skys_adventure_month': 'חודש ההרפתקאות של סקיי!',
-    'skys_schedule': 'לוח הזמנים של סקיי',
+    'skys_awesome_week': 'השבוע המדהים של סקאי!',
+    'skys_adventure_month': 'חודש ההרפתקאות של סקאי!',
+    'skys_schedule': 'לוח הזמנים של סקאי',
     'week_of': 'שבוע של',
     'no_gan_banner': '🏠 !אין גן 🏠',
     'last_friday_of_month': 'שישי אחרון של החודש!',
@@ -340,7 +340,7 @@ const translations = {
     'where_to_go_week': 'לאן הולכים השבוע:',
     'where_to_go': 'לאן הולכים:',
     'this_months_adventures': 'ההרפתקאות של החודש:',
-    'made_with_love': 'נעשה עם 💜 בשביל סקיי',
+    'made_with_love': 'נעשה עם 💜 בשביל סקאי',
     'back': 'חזרה ←',
     'tbd': 'טרם נקבע',
     'last_fri_short': 'שישי אחרון',

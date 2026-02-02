@@ -20,8 +20,10 @@ export function ActivityPopup({ activity, onClose }: ActivityPopupProps) {
   const [defaultTime, setDefaultTime] = useState(activity.default_time || '');
 
   const updateActivity = useUpdateActivity();
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const handleSave = () => {
+    setSaveError(null);
     updateActivity.mutate(
       {
         id: activity.id,
@@ -35,6 +37,9 @@ export function ActivityPopup({ activity, onClose }: ActivityPopupProps) {
       {
         onSuccess: () => {
           setIsEditing(false);
+        },
+        onError: (err) => {
+          setSaveError(err instanceof Error ? err.message : 'Save failed');
         },
       }
     );
@@ -185,7 +190,11 @@ export function ActivityPopup({ activity, onClose }: ActivityPopupProps) {
         </div>
 
         {/* Action buttons */}
-        <div className="p-4 border-t flex justify-end gap-2">
+        <div className="p-4 border-t">
+          {saveError && (
+            <div className="text-red-600 text-sm mb-2">{saveError}</div>
+          )}
+          <div className="flex justify-end gap-2">
           {isEditing ? (
             <>
               <button
@@ -210,6 +219,7 @@ export function ActivityPopup({ activity, onClose }: ActivityPopupProps) {
               {t('edit_activity')}
             </button>
           )}
+          </div>
         </div>
       </div>
     </div>

@@ -60,26 +60,28 @@ export function useUpdateActivity() {
 
   return useMutation({
     mutationFn: async (activity: Partial<Activity> & { id: string }) => {
+      const { id, ...updates } = activity;
+
       // Re-assign icon if name changed
-      if (activity.name) {
-        activity.icon = getActivityIcon(activity.name);
+      if (updates.name) {
+        updates.icon = getActivityIcon(updates.name);
       }
 
       const toTranslate: Record<string, string> = {};
-      if (activity.name) toTranslate.name = activity.name;
-      if (activity.note) toTranslate.note = activity.note;
-      if (activity.address) toTranslate.address = activity.address;
+      if (updates.name) toTranslate.name = updates.name;
+      if (updates.note) toTranslate.note = updates.note;
+      if (updates.address) toTranslate.address = updates.address;
       if (Object.keys(toTranslate).length > 0) {
         const he = await translateFields(toTranslate);
-        if (he.name) activity.name_he = he.name;
-        if (he.note) activity.note_he = he.note;
-        if (he.address) activity.address_he = he.address;
+        if (he.name) updates.name_he = he.name;
+        if (he.note) updates.note_he = he.note;
+        if (he.address) updates.address_he = he.address;
       }
 
       const { data, error } = await supabase
         .from('activities')
-        .update(activity)
-        .eq('id', activity.id)
+        .update(updates)
+        .eq('id', id)
         .select()
         .single();
 
