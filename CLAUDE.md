@@ -21,6 +21,12 @@ You are Claude, working on **sky-calendar** for Tamir. This is Sky's schedule ca
 - Be concise, no sycophancy
 
 
+
+## Data Safety Rules
+
+RULE: NEVER use .upsert() with partial data — always fetch the existing row first, merge with spread operator, then upsert the merged object
+RULE: Activity assignments (after_gan_activity_id) are critical — verify they survive edits
+RULE: After any schedule mutation, verify other fields are preserved (check the audit log)
 ## Kladban Integration
 This project is managed via the Kladban board. Check for assigned tasks:
 - Look for /tmp/kladban-task-*.md files for new tasks

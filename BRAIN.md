@@ -63,6 +63,10 @@ The user expects Claude to be proactive about connecting to these services rathe
    - **Last Friday-specific:** family_dinner_person_id, family_dinner_time (default "16:00")
    - **CRITICAL:** Saturday uses `activities` JSONB array, NOT `after_gan_activity_id`
 
+
+6. **schedule_audit_log** - Audit trail for all schedule/activity changes
+   - id (serial), table_name, record_date, action (INSERT/UPDATE/DELETE), old_data (JSONB), new_data (JSONB), changed_by, created_at
+   - Populated by `log_schedule_change()` trigger on day_schedules, saturday_schedules, activities
 5. **settings** - App settings
    - current_theme, theme_randomized_week, previous_week_theme
 
@@ -288,6 +292,14 @@ npx vercel logs sky-calendar.vercel.app --since 5m
 ```
 
 ## Changelog
+
+### 2026-02-02 (Data Loss Fix)
+- **CRITICAL BUG FIX: Partial upsert data loss** in `useSchedule.ts`
+  - **Root cause:** `.upsert(partialObject, { onConflict: 'date' })` replaces the entire row. When EditDayModal or AI assistant sent only changed fields, all other columns (like `after_gan_activity_id`) got wiped to NULL.
+  - **Impact:** Bats event on Feb 2 was deleted when an unrelated field was edited.
+  - **Fix:** Both `useUpdateDaySchedule` and `useUpdateSaturdaySchedule` now fetch the existing row, merge with spread operator (`{ ...existing, ...schedule }`), then upsert the merged object.
+- **Added `schedule_audit_log` table + triggers** on `day_schedules`, `saturday_schedules`, and `activities` tables. All INSERT/UPDATE/DELETE operations are logged with old_data and new_data JSONB columns.
+- **Restored bats event** (`after_gan_activity_id`, `after_gan_time`) for Feb 2.
 
 ### 2026-02-02
 - **Auto-translate to Hebrew on save**: Free-form text (gan activities, notes, activity names/addresses) auto-translated via Claude Sonnet before saving to Supabase

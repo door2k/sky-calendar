@@ -77,9 +77,18 @@ export function useUpdateDaySchedule() {
         if (he.notes) schedule.notes_he = he.notes;
       }
 
+      // Fetch existing row to merge, preventing partial upsert data loss
+      const { data: existing } = await supabase
+        .from('day_schedules')
+        .select('*')
+        .eq('date', schedule.date)
+        .maybeSingle();
+
+      const merged = { ...existing, ...schedule };
+
       const { data, error } = await supabase
         .from('day_schedules')
-        .upsert(schedule, { onConflict: 'date' })
+        .upsert(merged, { onConflict: 'date' })
         .select()
         .single();
 
@@ -105,9 +114,18 @@ export function useUpdateSaturdaySchedule() {
         schedule.activities_he = await translateSaturdayActivities(schedule.activities);
       }
 
+      // Fetch existing row to merge, preventing partial upsert data loss
+      const { data: existing } = await supabase
+        .from('saturday_schedules')
+        .select('*')
+        .eq('date', schedule.date)
+        .maybeSingle();
+
+      const merged = { ...existing, ...schedule };
+
       const { data, error } = await supabase
         .from('saturday_schedules')
-        .upsert(schedule, { onConflict: 'date' })
+        .upsert(merged, { onConflict: 'date' })
         .select()
         .single();
 
