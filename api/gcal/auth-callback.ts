@@ -1,5 +1,5 @@
 import { google } from 'googleapis';
-import { supabase } from './lib/supabase.js';
+import { supabase } from './_lib/supabase.js';
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;

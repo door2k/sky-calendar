@@ -1,11 +1,11 @@
-import { supabase } from './lib/supabase.js';
-import { getCalendarClient } from './lib/google-auth.js';
+import { supabase } from './_lib/supabase.js';
+import { getCalendarClient } from './_lib/google-auth.js';
 import {
   mapDayScheduleToEvents,
   mapSaturdayScheduleToEvents,
   toGoogleEvent,
   type GCalEventSpec,
-} from './lib/event-mapper.js';
+} from './_lib/event-mapper.js';
 
 const CALENDAR_ID = process.env.GCAL_CALENDAR_ID;
 
