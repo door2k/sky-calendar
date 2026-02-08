@@ -123,8 +123,8 @@ export function WeekView() {
 
   const [calendarCopied, setCalendarCopied] = useState(false);
   const handleSubscribeCalendar = useCallback(() => {
-    const calUrl = `${window.location.origin}/api/calendar`;
-    const googleUrl = `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(calUrl)}`;
+    const webcalUrl = `webcal://${window.location.host}/api/calendar`;
+    const googleUrl = `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(webcalUrl)}`;
     window.open(googleUrl, '_blank');
   }, []);
   const handleCopyCalendarLink = useCallback(() => {
