@@ -3,6 +3,6 @@
     { "source": "/(.*)", "destination": "/" }
   ],
   "crons": [
-    { "path": "/api/gcal/sync-pull", "schedule": "*/15 * * * *" }
+    { "path": "/api/gcal/sync-pull", "schedule": "0 6 * * *" }
   ]
 }
