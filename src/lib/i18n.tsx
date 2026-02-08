@@ -17,6 +17,9 @@ const translations = {
     'week_only': 'Week Only',
     'week_plus_month': 'Week + Month',
     'print': 'Print',
+    'google_calendar': 'Google Calendar',
+    'subscribe_calendar': 'Subscribe',
+    'calendar_link_copied': 'Calendar link copied!',
 
     // MonthView
     'skys_month': "Sky's Month",
@@ -199,6 +202,9 @@ const translations = {
     'week_only': 'שבוע בלבד',
     'week_plus_month': 'שבוע + חודש',
     'print': 'הדפסה',
+    'google_calendar': 'Google Calendar',
+    'subscribe_calendar': 'הרשמה',
+    'calendar_link_copied': 'קישור יומן הועתק!',
 
     // MonthView
     'skys_month': 'החודש של סקאי',

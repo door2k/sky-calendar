@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { startOfWeek, addWeeks, addDays, format, parseISO, isSameDay } from 'date-fns';
@@ -121,6 +121,20 @@ export function WeekView() {
     navigate(`/print/combined/${format(weekStart, 'yyyy-MM-dd')}`);
   };
 
+  const [calendarCopied, setCalendarCopied] = useState(false);
+  const handleSubscribeCalendar = useCallback(() => {
+    const calUrl = `${window.location.origin}/api/calendar`;
+    const googleUrl = `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(calUrl)}`;
+    window.open(googleUrl, '_blank');
+  }, []);
+  const handleCopyCalendarLink = useCallback(() => {
+    const calUrl = `${window.location.origin}/api/calendar`;
+    navigator.clipboard.writeText(calUrl).then(() => {
+      setCalendarCopied(true);
+      setTimeout(() => setCalendarCopied(false), 2000);
+    });
+  }, []);
+
   const weekEndDate = addDays(weekStart, 6);
 
   return (
@@ -222,6 +236,28 @@ export function WeekView() {
                   className="block w-full px-4 py-2 text-left hover:bg-gray-50 text-sm"
                 >
                   {t('week_plus_month')}
+                </button>
+              </div>
+            </div>
+            <div className="relative group">
+              <button
+                onClick={handleSubscribeCalendar}
+                className="px-4 py-2 rounded-lg border hover:bg-gray-50"
+              >
+                {t('google_calendar')} 📅
+              </button>
+              <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 sm:bottom-auto sm:top-full sm:mt-1 sm:right-0 sm:left-auto sm:translate-x-0 bg-white border rounded-lg shadow-lg hidden group-hover:block z-10 min-w-40">
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleSubscribeCalendar(); }}
+                  className="block w-full px-4 py-2 text-left hover:bg-gray-50 text-sm"
+                >
+                  {t('subscribe_calendar')}
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleCopyCalendarLink(); }}
+                  className="block w-full px-4 py-2 text-left hover:bg-gray-50 text-sm"
+                >
+                  {calendarCopied ? t('calendar_link_copied') : 'Copy link'}
                 </button>
               </div>
             </div>
