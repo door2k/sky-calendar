@@ -59,7 +59,7 @@ export default async function handler(req: Request): Promise<Response> {
 
       let response;
       try {
-        response = await calendar.events.list(listParams as Parameters<typeof calendar.events.list>[0]);
+        response = await calendar.events.list(listParams as unknown as Parameters<typeof calendar.events.list>[0]);
       } catch (err: unknown) {
         // If syncToken is invalid (410 Gone), do a full sync
         const status = (err as { code?: number })?.code;
