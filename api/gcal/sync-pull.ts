@@ -1,11 +1,8 @@
 import { supabase } from './_lib/supabase.js';
-import { getCalendarClient } from './_lib/google-auth.js';
+import { gcalFetch, getCalendarId } from './_lib/google-auth.js';
 
-const CALENDAR_ID = process.env.GCAL_CALENDAR_ID;
 const CRON_SECRET = process.env.CRON_SECRET;
 const COOLDOWN_MS = 60_000; // 60 seconds after push before we process pull changes
-
-if (!CALENDAR_ID) throw new Error('Missing GCAL_CALENDAR_ID env var');
 
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'GET') {
@@ -25,7 +22,7 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   try {
-    const calendar = await getCalendarClient();
+    const calendarId = getCalendarId();
 
     // Load sync state
     const { data: syncState } = await supabase
@@ -34,20 +31,17 @@ export default async function handler(req: Request): Promise<Response> {
       .eq('id', 'default')
       .maybeSingle();
 
-    // Fetch events from Google Calendar
-    const listParams: Record<string, unknown> = {
-      calendarId: CALENDAR_ID,
-      singleEvents: true,
-    };
+    // Build query params
+    const params = new URLSearchParams({ singleEvents: 'true' });
 
     if (syncState?.sync_token) {
-      listParams.syncToken = syncState.sync_token;
+      params.set('syncToken', syncState.sync_token);
     } else {
       // First sync: get events from 30 days ago
       const timeMin = new Date();
       timeMin.setDate(timeMin.getDate() - 30);
-      listParams.timeMin = timeMin.toISOString();
-      listParams.maxResults = 250;
+      params.set('timeMin', timeMin.toISOString());
+      params.set('maxResults', '250');
     }
 
     let nextPageToken: string | undefined;
@@ -55,16 +49,15 @@ export default async function handler(req: Request): Promise<Response> {
     const results = { processed: 0, skipped: 0, deleted: 0, errors: 0 };
 
     do {
-      if (nextPageToken) listParams.pageToken = nextPageToken;
+      if (nextPageToken) params.set('pageToken', nextPageToken);
 
-      let response;
-      try {
-        response = await calendar.events.list(listParams as unknown as Parameters<typeof calendar.events.list>[0]);
-      } catch (err: unknown) {
+      const listRes = await gcalFetch(
+        `/calendars/${encodeURIComponent(calendarId)}/events?${params.toString()}`,
+      );
+
+      if (!listRes.ok) {
         // If syncToken is invalid (410 Gone), do a full sync
-        const status = (err as { code?: number })?.code;
-        if (status === 410) {
-          // Clear sync token and retry with time-based query
+        if (listRes.status === 410) {
           await supabase
             .from('gcal_sync_state')
             .upsert({ id: 'default', sync_token: null, updated_at: new Date().toISOString() });
@@ -74,12 +67,13 @@ export default async function handler(req: Request): Promise<Response> {
             message: 'Sync token expired, cleared for full re-sync on next run',
           }), { status: 200, headers: { 'Content-Type': 'application/json' } });
         }
-        throw err;
+        throw new Error(`GCal list failed: ${await listRes.text()}`);
       }
 
-      const events = response.data.items ?? [];
-      newSyncToken = response.data.nextSyncToken ?? undefined;
-      nextPageToken = response.data.nextPageToken ?? undefined;
+      const data = await listRes.json();
+      const events = data.items ?? [];
+      newSyncToken = data.nextSyncToken ?? undefined;
+      nextPageToken = data.nextPageToken ?? undefined;
 
       for (const event of events) {
         // Only process events that originated from sky-calendar
@@ -110,7 +104,6 @@ export default async function handler(req: Request): Promise<Response> {
         // Handle deleted events
         if (event.status === 'cancelled') {
           if (mapping) {
-            // Clear the corresponding field in Supabase
             await clearScheduleField(mapping);
             await supabase.from('gcal_event_map').delete().eq('id', mapping.id);
             results.deleted++;
@@ -185,7 +178,6 @@ async function clearScheduleField(mapping: Record<string, unknown>) {
     }
     await supabase.from('day_schedules').update(updates).eq('date', date);
   } else if (table === 'saturday_schedules') {
-    // Remove the specific activity from the array
     const eventIndex = mapping.event_index as number;
     const { data: schedule } = await supabase
       .from('saturday_schedules')
@@ -219,7 +211,6 @@ async function updateScheduleFromEvent(
 
     switch (eventType) {
       case 'dropoff': {
-        // Parse "🌅 Dropoff — PersonName"
         const match = summary.match(/Dropoff\s*[—-]\s*(.+)/);
         if (match) {
           const personId = await resolvePersonId(match[1].trim());
@@ -257,3 +248,7 @@ async function updateScheduleFromEvent(
     .update({ last_synced_at: new Date().toISOString() })
     .eq('id', mapping.id);
 }
+
+export const config = {
+  runtime: 'edge',
+};

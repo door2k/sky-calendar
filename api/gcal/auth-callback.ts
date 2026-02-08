@@ -1,4 +1,3 @@
-import { google } from 'googleapis';
 import { supabase } from './_lib/supabase.js';
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
@@ -30,21 +29,32 @@ export default async function handler(req: Request): Promise<Response> {
 
   const redirectUri = `${url.protocol}//${url.host}/api/gcal/auth-callback`;
 
-  const oauth2Client = new google.auth.OAuth2(
-    GOOGLE_CLIENT_ID,
-    GOOGLE_CLIENT_SECRET,
-    redirectUri,
-  );
-
   try {
-    const { tokens } = await oauth2Client.getToken(code);
+    // Exchange code for tokens using raw fetch
+    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: GOOGLE_CLIENT_ID!,
+        client_secret: GOOGLE_CLIENT_SECRET!,
+        code,
+        grant_type: 'authorization_code',
+        redirect_uri: redirectUri,
+      }),
+    });
+
+    if (!tokenRes.ok) {
+      throw new Error(`Token exchange failed: ${await tokenRes.text()}`);
+    }
+
+    const tokens = await tokenRes.json();
 
     // Persist tokens to Supabase
     const { error: dbError } = await supabase.from('gcal_tokens').upsert({
       id: 'default',
-      access_token: tokens.access_token!,
-      refresh_token: tokens.refresh_token!,
-      expiry_date: tokens.expiry_date!,
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      expiry_date: Date.now() + (tokens.expires_in * 1000),
       scope: tokens.scope ?? 'https://www.googleapis.com/auth/calendar',
       updated_at: new Date().toISOString(),
     });
@@ -61,3 +71,7 @@ export default async function handler(req: Request): Promise<Response> {
     );
   }
 }
+
+export const config = {
+  runtime: 'edge',
+};

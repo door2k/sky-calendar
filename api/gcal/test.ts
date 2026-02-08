@@ -4,3 +4,7 @@ export default async function handler(req: Request): Promise<Response> {
     headers: { 'Content-Type': 'application/json' },
   });
 }
+
+export const config = {
+  runtime: 'edge',
+};

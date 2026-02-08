@@ -1,4 +1,3 @@
-import { google } from 'googleapis';
 import { supabase } from './supabase.js';
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
@@ -8,8 +7,9 @@ if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
   throw new Error('Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET env vars');
 }
 
-export async function getGoogleAuth() {
-  // Load tokens from Supabase
+const GCAL_BASE = 'https://www.googleapis.com/calendar/v3';
+
+export async function getAccessToken(): Promise<string> {
   const { data: tokens, error } = await supabase
     .from('gcal_tokens')
     .select('*')
@@ -20,43 +20,55 @@ export async function getGoogleAuth() {
     throw new Error(`Failed to load gcal_tokens: ${error?.message ?? 'no row'}`);
   }
 
-  const oauth2Client = new google.auth.OAuth2(
-    GOOGLE_CLIENT_ID,
-    GOOGLE_CLIENT_SECRET,
-  );
+  // If token is expired, refresh it
+  if (tokens.expiry_date && tokens.expiry_date < Date.now()) {
+    const refreshResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: GOOGLE_CLIENT_ID!,
+        client_secret: GOOGLE_CLIENT_SECRET!,
+        refresh_token: tokens.refresh_token,
+        grant_type: 'refresh_token',
+      }),
+    });
 
-  oauth2Client.setCredentials({
-    access_token: tokens.access_token,
-    refresh_token: tokens.refresh_token,
-    expiry_date: tokens.expiry_date,
-    scope: tokens.scope,
-    token_type: 'Bearer',
-  });
+    if (!refreshResponse.ok) {
+      throw new Error(`Token refresh failed: ${await refreshResponse.text()}`);
+    }
 
-  // Auto-refresh: listen for new tokens and persist them
-  oauth2Client.on('tokens', async (newTokens) => {
-    const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
-    if (newTokens.access_token) update.access_token = newTokens.access_token;
-    if (newTokens.refresh_token) update.refresh_token = newTokens.refresh_token;
-    if (newTokens.expiry_date) update.expiry_date = newTokens.expiry_date;
+    const newTokens = await refreshResponse.json();
 
-    await supabase
-      .from('gcal_tokens')
-      .update(update)
-      .eq('id', 'default');
-  });
+    await supabase.from('gcal_tokens').update({
+      access_token: newTokens.access_token,
+      expiry_date: Date.now() + (newTokens.expires_in * 1000),
+      updated_at: new Date().toISOString(),
+    }).eq('id', 'default');
 
-  // Force refresh if expired
-  const now = Date.now();
-  if (tokens.expiry_date && tokens.expiry_date < now) {
-    const { credentials } = await oauth2Client.refreshAccessToken();
-    oauth2Client.setCredentials(credentials);
+    return newTokens.access_token;
   }
 
-  return oauth2Client;
+  return tokens.access_token;
 }
 
-export async function getCalendarClient() {
-  const auth = await getGoogleAuth();
-  return google.calendar({ version: 'v3', auth });
+export function getCalendarId(): string {
+  const id = process.env.GCAL_CALENDAR_ID;
+  if (!id) throw new Error('Missing GCAL_CALENDAR_ID env var');
+  return id;
+}
+
+// Generic Google Calendar API fetch helper
+export async function gcalFetch(
+  path: string,
+  options: RequestInit = {},
+): Promise<Response> {
+  const token = await getAccessToken();
+  return fetch(`${GCAL_BASE}${path}`, {
+    ...options,
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
 }

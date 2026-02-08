@@ -52,3 +52,7 @@ export default async function handler(req: Request): Promise<Response> {
     }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 }
+
+export const config = {
+  runtime: 'edge',
+};

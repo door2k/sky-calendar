@@ -1,6 +1,11 @@
-import { createHash } from 'crypto';
-
+// Simple deterministic hash for change detection (not security)
 export function computeHash(data: Record<string, unknown>): string {
-  const sorted = JSON.stringify(data, Object.keys(data).sort());
-  return createHash('sha256').update(sorted).digest('hex').slice(0, 16);
+  const str = JSON.stringify(data, Object.keys(data).sort());
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(36);
 }
