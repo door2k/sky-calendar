@@ -237,7 +237,18 @@ Free-form text is auto-translated to Hebrew on save using a translate-then-save 
 - [x] AI sometimes gets confused about exact dates - **FIXED: explicit week dates**
 - [x] Saturday activities don't save - **FIXED: added `activities` column**
 - [ ] No authentication yet (public edit access)
-- [ ] No Google Calendar sync yet
+- [ ] Google Calendar sync — **IN PROGRESS** (see RESUME-TASK.md in claude-operator)
+
+### Google Calendar Integration (In Progress)
+- **Calendar:** "Sky's Schedule" (`ab69408d...@group.calendar.google.com`), shared with asias22@gmail.com
+- **Goal:** Bidirectional sync so both parents see schedule on phones
+- **Architecture:** Vercel Node.js API routes at `/api/gcal/*` (NOT edge runtime)
+- **OAuth:** Reuses google-calendar-mcp tokens (door2k@gmail.com), stored in Supabase `gcal_tokens` table
+- **New tables:** `gcal_event_map`, `gcal_tokens`, `gcal_sync_state`
+- **Push sync:** Fire-and-forget after every mutation
+- **Pull sync:** Vercel cron every 15 min with Google syncToken
+- **Status:** Phase 1 — blocked on Supabase DDL (need to create tables)
+- **Full plan:** See `RESUME-TASK.md` in claude-operator project
 
 ### Feature Requests (Backlog)
 - [x] Add images/photos for people - `PersonAvatar.tsx` + `PeopleEditor.tsx`

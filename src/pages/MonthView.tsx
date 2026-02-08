@@ -19,6 +19,7 @@ import { isLastFridayOfMonth } from '../lib/dateUtils';
 import { ThemePicker } from '../components/ThemePicker';
 import { ActivityPopup } from '../components/ActivityPopup';
 import { AIAssistant } from '../components/AIAssistant';
+import { GCalSyncStatus } from '../components/GCalSyncStatus';
 import { useTheme } from '../hooks/useTheme';
 import { usePeople } from '../hooks/usePeople';
 import { useActivities } from '../hooks/useActivities';
@@ -141,6 +142,7 @@ export function MonthView() {
             </div>
             {!isViewMode && <ThemePicker currentTheme={currentTheme} onSelectTheme={selectTheme} />}
           </div>
+          <GCalSyncStatus />
         </div>
 
         {/* Month Navigation */}

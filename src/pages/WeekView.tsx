@@ -8,6 +8,7 @@ import { ActivityPopup } from '../components/ActivityPopup';
 import { EditDayModal } from '../components/EditDayModal';
 import { AddActivityModal } from '../components/AddActivityModal';
 import { AIAssistant } from '../components/AIAssistant';
+import { GCalSyncStatus } from '../components/GCalSyncStatus';
 import { useTheme } from '../hooks/useTheme';
 import { usePeople } from '../hooks/usePeople';
 import { useActivities, useCreateActivity } from '../hooks/useActivities';
@@ -140,6 +141,7 @@ export function WeekView() {
             </div>
             {!isViewMode && <ThemePicker currentTheme={currentTheme} onSelectTheme={selectTheme} />}
           </div>
+          <GCalSyncStatus />
         </div>
 
         {/* Day Cards Grid */}

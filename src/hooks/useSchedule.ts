@@ -95,8 +95,14 @@ export function useUpdateDaySchedule() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['schedule'] });
+      // Fire-and-forget push sync to Google Calendar
+      fetch('/api/gcal/sync-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: variables.date, table: 'day_schedules' }),
+      }).catch(() => {});
     },
   });
 }
@@ -132,8 +138,14 @@ export function useUpdateSaturdaySchedule() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['schedule'] });
+      // Fire-and-forget push sync to Google Calendar
+      fetch('/api/gcal/sync-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: variables.date, table: 'saturday_schedules' }),
+      }).catch(() => {});
     },
   });
 }
