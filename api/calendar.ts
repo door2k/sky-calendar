@@ -40,11 +40,18 @@ function formatICSEndDate(dateStr: string, timeStr?: string | null): string {
   return `${y}${m}${d}T170000`;
 }
 
-/** Find the first occurrence of a given weekday on or after 2025-09-01 */
-function getFirstOccurrence(dayName: string): string {
-  const start = new Date(2025, 8, 1); // Sep 1, 2025
+/** Find the first occurrence of a given weekday in the current month.
+ *  Google Calendar subscriptions ignore RRULE events with old DTSTARTs,
+ *  so we anchor recurring events to the current month. */
+function getRecentOccurrence(dayName: string): string {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
   const targetDay = DAY_NUM[dayName.toLowerCase()];
-  if (targetDay === undefined) return '2025-09-01';
+  if (targetDay === undefined) {
+    const y = start.getFullYear();
+    const m = String(start.getMonth() + 1).padStart(2, '0');
+    return `${y}-${m}-01`;
+  }
   const diff = (targetDay - start.getDay() + 7) % 7;
   const first = new Date(start);
   first.setDate(first.getDate() + diff);
@@ -125,7 +132,7 @@ export default async function handler(req: Request): Promise<Response> {
     const dayCode = DAY_ICAL[activity.recurrence_day.toLowerCase()];
     if (!dayCode) continue;
 
-    const firstDate = getFirstOccurrence(activity.recurrence_day);
+    const firstDate = getRecentOccurrence(activity.recurrence_day);
     const dtStart = formatICSDate(firstDate, activity.default_time);
     const dtEnd = formatICSEndDate(firstDate, activity.default_time);
     const summary = `${activity.icon || '🎯'} ${activity.name}`;
@@ -179,6 +186,7 @@ export default async function handler(req: Request): Promise<Response> {
   for (const schedule of satSchedules) {
     const satActivities = schedule.activities || [];
     for (const act of satActivities) {
+      if (!act.activity_id) continue;
       const activity = activityMap.get(act.activity_id);
       const name = act.custom_name || activity?.name || 'Activity';
       const icon = activity?.icon || '🎯';
@@ -208,6 +216,8 @@ export default async function handler(req: Request): Promise<Response> {
     'CALSCALE:GREGORIAN',
     "X-WR-CALNAME:Sky's Schedule",
     'X-WR-TIMEZONE:Asia/Jerusalem',
+    'REFRESH-INTERVAL;VALUE=DURATION:PT1H',
+    'X-PUBLISHED-TTL:PT1H',
     'BEGIN:VTIMEZONE',
     'TZID:Asia/Jerusalem',
     'BEGIN:STANDARD',
@@ -233,7 +243,7 @@ export default async function handler(req: Request): Promise<Response> {
     headers: {
       'Content-Type': 'text/calendar; charset=utf-8',
       'Content-Disposition': 'attachment; filename="sky-schedule.ics"',
-      'Cache-Control': 'public, max-age=300',
+      'Cache-Control': 'public, max-age=120, must-revalidate',
     },
   });
 }
