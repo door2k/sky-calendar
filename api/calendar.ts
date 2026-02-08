@@ -76,6 +76,17 @@ interface SaturdaySchedule {
   activities?: { activity_id: string; time?: string; custom_name?: string }[];
 }
 
+function nowDTSTAMP(): string {
+  const now = new Date();
+  const y = now.getUTCFullYear();
+  const m = String(now.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(now.getUTCDate()).padStart(2, '0');
+  const h = String(now.getUTCHours()).padStart(2, '0');
+  const min = String(now.getUTCMinutes()).padStart(2, '0');
+  const s = String(now.getUTCSeconds()).padStart(2, '0');
+  return `${y}${m}${d}T${h}${min}${s}Z`;
+}
+
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'GET') {
     return new Response('Method not allowed', { status: 405 });
@@ -105,6 +116,7 @@ export default async function handler(req: Request): Promise<Response> {
 
   const activityMap = new Map(activities.map(a => [a.id, a]));
   const events: string[] = [];
+  const dtstamp = nowDTSTAMP();
 
   // 1. Recurring activities → weekly RRULE events
   for (const activity of activities) {
@@ -121,6 +133,7 @@ export default async function handler(req: Request): Promise<Response> {
     const lines = [
       'BEGIN:VEVENT',
       `UID:recurring-${activity.id}@sky-calendar`,
+      `DTSTAMP:${dtstamp}`,
       `DTSTART;TZID=Asia/Jerusalem:${dtStart}`,
       `DTEND;TZID=Asia/Jerusalem:${dtEnd}`,
       `RRULE:FREQ=WEEKLY;BYDAY=${dayCode}`,
@@ -152,6 +165,7 @@ export default async function handler(req: Request): Promise<Response> {
     const lines = [
       'BEGIN:VEVENT',
       `UID:day-${schedule.date}-${activity.id}@sky-calendar`,
+      `DTSTAMP:${dtstamp}`,
       `DTSTART;TZID=Asia/Jerusalem:${dtStart}`,
       `DTEND;TZID=Asia/Jerusalem:${dtEnd}`,
       `SUMMARY:${escapeICS(summary)}`,
@@ -175,6 +189,7 @@ export default async function handler(req: Request): Promise<Response> {
       const lines = [
         'BEGIN:VEVENT',
         `UID:sat-${schedule.date}-${act.activity_id}@sky-calendar`,
+        `DTSTAMP:${dtstamp}`,
         `DTSTART;TZID=Asia/Jerusalem:${dtStart}`,
         `DTEND;TZID=Asia/Jerusalem:${dtEnd}`,
         `SUMMARY:${escapeICS(`${icon} ${name}`)}`,
@@ -189,6 +204,8 @@ export default async function handler(req: Request): Promise<Response> {
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
     'PRODID:-//Sky Calendar//sky-calendar.vercel.app//EN',
+    'METHOD:PUBLISH',
+    'CALSCALE:GREGORIAN',
     "X-WR-CALNAME:Sky's Schedule",
     'X-WR-TIMEZONE:Asia/Jerusalem',
     'BEGIN:VTIMEZONE',
