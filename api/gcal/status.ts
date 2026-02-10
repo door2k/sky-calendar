@@ -35,10 +35,15 @@ export default async function handler(req: Request): Promise<Response> {
       .from('gcal_event_map')
       .select('id', { count: 'exact', head: true });
 
-    const tokenExpired = tokens.expiry_date ? tokens.expiry_date < Date.now() : false;
+    // Check if refresh token exists — access tokens expire hourly but auto-refresh on use
+    const { data: fullTokens } = await supabase
+      .from('gcal_tokens')
+      .select('refresh_token')
+      .eq('id', 'default')
+      .maybeSingle();
 
     return new Response(JSON.stringify({
-      status: tokenExpired ? 'token_expired' : 'connected',
+      status: fullTokens?.refresh_token ? 'connected' : 'token_expired',
       lastSync: syncState?.last_sync_at ?? null,
       hasSyncToken: !!syncState?.sync_token,
       mappedEvents: count ?? 0,
