@@ -87,6 +87,17 @@ export interface Theme {
   };
 }
 
+export interface GCalExternalEvent {
+  id: string;
+  gcal_event_id: string;
+  date: string;
+  summary: string | null;
+  location: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  all_day: boolean;
+}
+
 export type DayOfWeek = 'sunday' | 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday';
 
 export interface WeekData {

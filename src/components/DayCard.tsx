@@ -1,7 +1,7 @@
 import { format, isSaturday, isFriday, getDay } from 'date-fns';
 import { isLastFridayOfMonth } from '../lib/dateUtils';
 import { useI18n, useFormatDate } from '../lib/i18n';
-import type { DaySchedule, SaturdaySchedule, Person, Activity } from '../types';
+import type { DaySchedule, SaturdaySchedule, Person, Activity, GCalExternalEvent } from '../types';
 import { lf } from '../lib/i18n-field';
 import { PersonAvatar } from './PersonAvatar';
 
@@ -19,6 +19,7 @@ interface DayCardProps {
   isLastFriday?: boolean; // When true, render like Saturday
   lastFridaySchedule?: SaturdaySchedule | null; // Schedule for last Friday
   readOnly?: boolean;
+  externalEvents?: GCalExternalEvent[];
 }
 
 export function DayCard({
@@ -33,6 +34,7 @@ export function DayCard({
   isLastFriday = false,
   lastFridaySchedule,
   readOnly = false,
+  externalEvents = [],
 }: DayCardProps) {
   const { t, lang, translateName, translateActivity, translateReason } = useI18n();
   const formatDate = useFormatDate();
@@ -69,6 +71,34 @@ export function DayCard({
     const dayName = DAY_NAMES[dayOfWeek];
     return activities.filter(
       (a) => a.is_recurring && a.recurrence_day?.toLowerCase() === dayName
+    );
+  };
+
+  const formatExternalTime = (startTime: string | null): string | null => {
+    if (!startTime) return null;
+    const dt = new Date(startTime);
+    return dt.toLocaleTimeString('en-IL', { timeZone: 'Asia/Jerusalem', hour: '2-digit', minute: '2-digit', hour12: false });
+  };
+
+  const renderExternalEvents = () => {
+    if (!externalEvents || externalEvents.length === 0) return null;
+    return (
+      <div className="mt-2 space-y-1">
+        {externalEvents.map((ev) => (
+          <div key={ev.id} className="flex items-center gap-2 p-1.5 rounded text-sm" style={{ backgroundColor: '#e8f4fd' }}>
+            <span className="shrink-0">{'\u{1F4C5}'}</span>
+            <div className="min-w-0 flex-1">
+              <span className="font-medium text-gray-700">{ev.summary || 'Event'}</span>
+              {formatExternalTime(ev.start_time) && (
+                <span className="text-gray-500 ml-1">{formatExternalTime(ev.start_time)}</span>
+              )}
+              {ev.location && (
+                <div className="text-xs text-gray-500 truncate">{ev.location}</div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
     );
   };
 
@@ -153,6 +183,7 @@ export function DayCard({
             </div>
           </div>
         )}
+        {renderExternalEvents()}
       </div>
     );
   }
@@ -288,6 +319,8 @@ export function DayCard({
               </div>
             </div>
           )}
+
+          {renderExternalEvents()}
         </div>
       </div>
     </div>

@@ -13,6 +13,7 @@ import { useTheme } from '../hooks/useTheme';
 import { usePeople } from '../hooks/usePeople';
 import { useActivities, useCreateActivity } from '../hooks/useActivities';
 import { useWeekSchedule, useUpdateDaySchedule, useUpdateSaturdaySchedule } from '../hooks/useSchedule';
+import { useExternalEvents } from '../hooks/useExternalEvents';
 import { useI18n, useFormatDate, LanguageToggle } from '../lib/i18n';
 import type { Activity, DaySchedule, SaturdaySchedule } from '../types';
 
@@ -55,6 +56,10 @@ export function WeekView() {
   const updateDay = useUpdateDaySchedule();
   const updateSaturday = useUpdateSaturdaySchedule();
   const createActivity = useCreateActivity();
+
+  const weekStartStr = format(weekStart, 'yyyy-MM-dd');
+  const weekEndStr = format(addDays(weekStart, 6), 'yyyy-MM-dd');
+  const { data: externalEvents = [] } = useExternalEvents(weekStartStr, weekEndStr);
 
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [editingDate, setEditingDate] = useState<Date | null>(null);
@@ -175,6 +180,7 @@ export function WeekView() {
                   isLastFriday={index === 5 && weekData?.fridayIsLastOfMonth}
                   lastFridaySchedule={index === 5 ? weekData?.lastFriday : undefined}
                   readOnly={isViewMode}
+                  externalEvents={externalEvents.filter(e => e.date === format(dayDate, 'yyyy-MM-dd'))}
                 />
               </div>
             );
@@ -193,6 +199,7 @@ export function WeekView() {
             onActivityClick={setSelectedActivity}
             isToday={isSameDay(weekDates[6], today)}
             readOnly={isViewMode}
+            externalEvents={externalEvents.filter(e => e.date === format(weekDates[6], 'yyyy-MM-dd'))}
           />
         </div>
 

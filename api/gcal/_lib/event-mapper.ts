@@ -19,6 +19,10 @@ interface Person {
 interface Activity {
   id: string;
   name: string;
+  is_recurring?: boolean;
+  recurrence_day?: string;
+  default_time?: string;
+  icon?: string;
 }
 
 interface DaySchedule {
@@ -192,6 +196,31 @@ export function mapDayScheduleToEvents(
       extendedProperties: makeExtProps(table, date, 'after_gan', 0),
     });
   }
+
+  // Recurring activities for this day of the week
+  const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const dayOfWeek = new Date(date + 'T00:00:00').getDay();
+  const dayName = DAY_NAMES[dayOfWeek];
+  const recurringForDay = activities.filter(
+    a => a.is_recurring && a.recurrence_day?.toLowerCase() === dayName
+      && a.id !== schedule.after_gan_activity_id, // skip if already explicitly assigned
+  );
+
+  recurringForDay.forEach((act, index) => {
+    const actTime = act.default_time || '16:30';
+    const icon = act.icon || '🔁';
+    const hashData = { type: 'recurring_activity', date, activity: act.id, time: actTime };
+    events.push({
+      eventType: 'recurring_activity',
+      eventIndex: index,
+      summary: `${icon} ${act.name}`,
+      colorId: COLOR.grape,
+      startDateTime: toISO(date, actTime),
+      endDateTime: addHours(date, actTime, 1),
+      hash: computeHash(hashData),
+      extendedProperties: makeExtProps(table, date, 'recurring_activity', index),
+    });
+  });
 
   return events;
 }

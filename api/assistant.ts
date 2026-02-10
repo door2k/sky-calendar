@@ -229,16 +229,30 @@ export default async function handler(req: Request): Promise<Response> {
     const weekDates = getWeekDates(currentWeekStart);
     const weekDatesStr = weekDates.map(d => `- ${d.day}: ${d.date}`).join('\n');
 
-    // Build scheduled activities context
-    const scheduledActivitiesStr = schedules.length > 0
+    // Build full schedule context (people assignments + activities)
+    const findPerson = (id?: string) => id ? people.find(p => p.id === id)?.name : null;
+    const scheduleContextStr = schedules.length > 0
       ? schedules
-          .filter(s => s.after_gan_activity_id)
           .map(s => {
-            const activity = activities.find(a => a.id === s.after_gan_activity_id);
             const dayInfo = weekDates.find(d => d.date === s.date);
-            return `- ${dayInfo?.day || s.date}: ${activity?.name || 'Unknown activity'} at ${s.after_gan_time || 'unspecified time'}`;
+            const dayLabel = dayInfo?.day || s.date;
+            const parts: string[] = [];
+            const dropoff = findPerson(s.dropoff_person_id);
+            if (dropoff) parts.push(`Dropoff: ${dropoff}`);
+            const pickup = findPerson(s.pickup_person_id);
+            if (pickup) parts.push(`Pickup: ${pickup}`);
+            const bedtime = findPerson(s.bedtime_person_id);
+            if (bedtime) parts.push(`Bedtime: ${bedtime}`);
+            if (s.after_gan_activity_id) {
+              const activity = activities.find(a => a.id === s.after_gan_activity_id);
+              parts.push(`Activity: ${activity?.name || 'Unknown'} at ${s.after_gan_time || 'unspecified'}`);
+            }
+            if (s.is_no_gan) parts.push(`No Gan${s.no_gan_reason ? ': ' + s.no_gan_reason : ''}`);
+            if (parts.length === 0) return null;
+            return `- ${dayLabel} (${s.date}): ${parts.join(' | ')}`;
           })
-          .join('\n') || '(none scheduled this week)'
+          .filter(Boolean)
+          .join('\n') || '(no assignments this week)'
       : '(no schedule data provided)';
 
     const contextInfo = `
@@ -253,11 +267,11 @@ ${people.map(p => `- ${p.name} (${p.role}): ID="${p.id}"`).join('\n')}
 **Activities (definitions):**
 ${activities.length > 0 ? activities.map(a => `- ${a.name}${a.is_recurring ? ` (recurring: ${a.recurrence_day} at ${a.default_time})` : ''}: ID="${a.id}"`).join('\n') : '(none yet)'}
 
-**Currently Scheduled Activities This Week:**
-${scheduledActivitiesStr}
+**Current Schedule This Week (who does what each day):**
+${scheduleContextStr}
 
 IMPORTANT: When updating days, use the exact dates listed above. For example, if this week's Sunday is 2026-01-11, use "2026-01-11" for Sunday.
-IMPORTANT: "Activities (definitions)" shows what activities EXIST. "Currently Scheduled Activities" shows what's actually ASSIGNED to days this week.`;
+IMPORTANT: "Activities (definitions)" shows what activities EXIST. "Current Schedule" shows what's actually ASSIGNED to days this week — including dropoff, pickup, bedtime persons, and after-gan activities.`;
 
     // Build messages array with conversation history
     const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [];

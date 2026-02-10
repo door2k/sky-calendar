@@ -46,7 +46,7 @@ export default async function handler(req: Request): Promise<Response> {
 
     let nextPageToken: string | undefined;
     let newSyncToken: string | undefined;
-    const results = { processed: 0, skipped: 0, deleted: 0, errors: 0 };
+    const results = { processed: 0, skipped: 0, deleted: 0, errors: 0, external_imported: 0 };
 
     do {
       if (nextPageToken) params.set('pageToken', nextPageToken);
@@ -76,10 +76,59 @@ export default async function handler(req: Request): Promise<Response> {
       nextPageToken = data.nextPageToken ?? undefined;
 
       for (const event of events) {
-        // Only process events that originated from sky-calendar
+        // Check if event originated from sky-calendar or is external
         const skySource = event.extendedProperties?.private?.sky_source;
         if (skySource !== 'sky-calendar') {
-          results.skipped++;
+          // Handle external events — upsert into gcal_external_events
+          const gcalId = event.id;
+          if (!gcalId) continue;
+
+          // Handle deleted external events
+          if (event.status === 'cancelled') {
+            await supabase.from('gcal_external_events').delete().eq('gcal_event_id', gcalId);
+            results.external_imported++;
+            continue;
+          }
+
+          // Parse date and time from event start
+          const allDay = !!event.start?.date;
+          let eventDate: string;
+          let startTime: string | null = null;
+          let endTime: string | null = null;
+
+          if (allDay) {
+            eventDate = event.start.date; // YYYY-MM-DD
+          } else if (event.start?.dateTime) {
+            // Convert to Asia/Jerusalem date
+            const dt = new Date(event.start.dateTime);
+            eventDate = dt.toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' }); // YYYY-MM-DD
+            startTime = event.start.dateTime;
+            endTime = event.end?.dateTime ?? null;
+          } else {
+            results.skipped++;
+            continue;
+          }
+
+          const { error: upsertError } = await supabase
+            .from('gcal_external_events')
+            .upsert({
+              gcal_event_id: gcalId,
+              date: eventDate,
+              summary: event.summary ?? null,
+              location: event.location ?? null,
+              start_time: startTime,
+              end_time: endTime,
+              all_day: allDay,
+              gcal_etag: event.etag ?? null,
+              updated_at: new Date().toISOString(),
+            }, { onConflict: 'gcal_event_id' });
+
+          if (upsertError) {
+            console.error('Failed to upsert external event:', upsertError);
+            results.errors++;
+          } else {
+            results.external_imported++;
+          }
           continue;
         }
 

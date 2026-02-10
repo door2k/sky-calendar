@@ -36,7 +36,7 @@ export default async function handler(req: Request): Promise<Response> {
     // Load people and activities for name resolution
     const [peopleRes, activitiesRes] = await Promise.all([
       supabase.from('people').select('id, name'),
-      supabase.from('activities').select('id, name'),
+      supabase.from('activities').select('id, name, is_recurring, recurrence_day, default_time, icon'),
     ]);
 
     const people = peopleRes.data ?? [];
@@ -52,9 +52,9 @@ export default async function handler(req: Request): Promise<Response> {
         .eq('date', date)
         .maybeSingle();
 
-      if (schedule) {
-        desiredEvents = mapDayScheduleToEvents(schedule, people, activities);
-      }
+      // Use actual schedule or a minimal default (so recurring activities still sync)
+      const effectiveSchedule = schedule || { date, is_no_gan: false };
+      desiredEvents = mapDayScheduleToEvents(effectiveSchedule, people, activities);
     } else {
       const { data: schedule } = await supabase
         .from('saturday_schedules')
