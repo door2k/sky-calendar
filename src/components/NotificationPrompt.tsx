@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { usePushSubscription } from '../hooks/usePushSubscription';
 
 export function NotificationPrompt() {
   const [show, setShow] = useState(false);
+  const { subscribe } = usePushSubscription();
 
   useEffect(() => {
     if ('Notification' in window && Notification.permission === 'default') {
@@ -13,7 +15,10 @@ export function NotificationPrompt() {
   if (!show) return null;
 
   const handleEnable = async () => {
-    await Notification.requestPermission();
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
+      await subscribe();
+    }
     setShow(false);
   };
 
