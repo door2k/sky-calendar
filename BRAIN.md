@@ -1,6 +1,6 @@
 # Sky's Schedule Calendar - Project Brain
 
-> **Last Updated:** 2026-02-02
+> **Last Updated:** 2026-02-12
 > **Status:** Active Development
 > **Live URL:** https://sky-calendar.vercel.app
 
@@ -42,6 +42,9 @@ The user expects Claude to be proactive about connecting to these services rathe
 - `ANTHROPIC_API_KEY` - Claude API key (for AI assistant)
 - `SUPABASE_URL` - Supabase project URL (non-VITE, for API routes)
 - `SUPABASE_ANON_KEY` - Supabase anon key (non-VITE, for API routes)
+- `VITE_VAPID_PUBLIC_KEY` - VAPID public key for Web Push subscriptions (client-side)
+- `VAPID_PRIVATE_KEY` - VAPID private key for signing push payloads (server-side)
+- `VAPID_EMAIL` - Contact email for VAPID identification
 
 ## Database Schema
 
@@ -70,6 +73,10 @@ The user expects Claude to be proactive about connecting to these services rathe
 5. **settings** - App settings
    - current_theme, theme_randomized_week, previous_week_theme
 
+7. **push_subscriptions** - Web Push subscription endpoints
+   - endpoint (text, primary key), keys (JSONB: `{p256dh, auth}`), last_used_at (timestamp)
+   - Populated by `/api/push/subscribe` when a user enables notifications
+
 ### CRITICAL: Weekday vs Saturday Data Model
 
 This caused bugs - document it clearly:
@@ -95,6 +102,9 @@ This caused bugs - document it clearly:
 - [x] Print views (weekly and monthly)
 - [x] No-Gan day marking with reasons
 - [x] Friday Family Dinner - all Fridays show family dinner slot with large avatar and time
+- [x] Push notifications for schedule changes (Web Push API + custom edge VAPID implementation)
+- [x] Realtime UI updates via Supabase Realtime (live schedule sync across tabs/devices)
+- [x] PWA support — installable via "Add to Home Screen"
 
 ### AI Assistant (Claude-Powered)
 - [x] Natural language schedule updates
@@ -120,19 +130,30 @@ This caused bugs - document it clearly:
 sky-calendar/
 ├── api/
 │   ├── assistant.ts        # Claude API serverless function (edge runtime)
-│   └── translate.ts        # EN→HE translation endpoint (Claude Sonnet)
+│   ├── translate.ts        # EN→HE translation endpoint (Claude Sonnet)
+│   └── push/
+│       ├── subscribe.ts    # Edge API — stores push subscriptions
+│       ├── send.ts         # Edge API — sends Web Push to all subscribers
+│       └── _lib/
+│           └── web-push-edge.ts  # Custom edge-compatible Web Push (RFC 8291/8292)
+├── public/
+│   ├── sw.js               # Service worker — push events + notification clicks
+│   └── manifest.json       # PWA manifest — "Add to Home Screen"
 ├── src/
 │   ├── components/
 │   │   ├── AIAssistant.tsx  # AI chat interface + action executor
 │   │   ├── DayCard.tsx      # Day card component
 │   │   ├── ThemePicker.tsx  # Theme selector
+│   │   ├── NotificationPrompt.tsx  # Push notification opt-in banner
 │   │   ├── ActivityPopup.tsx
 │   │   ├── EditDayModal.tsx
 │   │   └── AddActivityModal.tsx
 │   ├── hooks/
 │   │   ├── usePeople.ts
 │   │   ├── useActivities.ts
-│   │   ├── useSchedule.ts   # Has useUpdateDaySchedule, useUpdateSaturdaySchedule
+│   │   ├── useSchedule.ts   # Has useUpdateDaySchedule, useUpdateSaturdaySchedule + push notify
+│   │   ├── usePushSubscription.ts  # PushManager subscription + API registration
+│   │   ├── useRealtimeSchedule.ts  # Supabase Realtime listener, invalidates React Query
 │   │   └── useTheme.ts
 │   ├── lib/
 │   │   ├── supabase.ts      # Supabase client
@@ -249,6 +270,40 @@ Free-form text is auto-translated to Hebrew on save using a translate-then-save 
 - **Pull sync:** Vercel cron every 15 min with Google syncToken
 - **Status:** Phase 1 — blocked on Supabase DDL (need to create tables)
 - **Full plan:** See `RESUME-TASK.md` in claude-operator project
+
+### Push Notifications & Realtime Updates
+
+Full Web Push notification support for schedule change alerts, plus Supabase Realtime for live UI updates.
+
+**How It Works:**
+1. User visits the app; after 30 seconds a fixed-bottom banner (`NotificationPrompt.tsx`) asks to enable push notifications
+2. On acceptance, `usePushSubscription` hook subscribes via the browser PushManager API and POSTs the subscription to `/api/push/subscribe`, which stores it in the `push_subscriptions` table
+3. When any schedule mutation succeeds (in `useSchedule.ts`), a fire-and-forget POST to `/api/push/send` triggers push notifications to all stored subscribers
+4. The service worker (`/public/sw.js`) receives the push event and shows a native notification; clicking the notification opens the app
+5. Simultaneously, `useRealtimeSchedule` hook listens to Supabase Realtime on `day_schedules` and `saturday_schedules` tables, invalidating React Query cache so the UI updates live without refresh
+
+**Key Files:**
+
+| File | Purpose |
+|------|---------|
+| `public/sw.js` | Service worker — handles `push` events and `notificationclick` |
+| `public/manifest.json` | PWA manifest — enables "Add to Home Screen" |
+| `src/components/NotificationPrompt.tsx` | Fixed-bottom banner, appears after 30s, prompts to enable push |
+| `src/hooks/usePushSubscription.ts` | Subscribes to PushManager, sends subscription to API |
+| `src/hooks/useRealtimeSchedule.ts` | Supabase Realtime listener for `day_schedules` and `saturday_schedules`, invalidates React Query cache |
+| `api/push/subscribe.ts` | Edge API — stores push subscription in `push_subscriptions` table |
+| `api/push/send.ts` | Edge API — sends Web Push to all subscribers |
+| `api/push/_lib/web-push-edge.ts` | Custom 286-line edge-compatible Web Push implementation |
+
+**Custom Edge Web Push (`api/push/_lib/web-push-edge.ts`):**
+- Standard `web-push` npm package uses Node.js `crypto` module, which is incompatible with Vercel edge runtime
+- Custom implementation uses Web Crypto API: ECDSA P-256 VAPID JWT signing, AES-128-GCM payload encryption per RFC 8291 and RFC 8292
+- Handles the full push protocol: VAPID token generation, ECDH key agreement, HKDF key derivation, content encryption, and HTTP request to push service
+
+**VAPID Keys:**
+- Generated once, stored in Vercel env vars (`VITE_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_EMAIL`)
+- `VITE_VAPID_PUBLIC_KEY` is exposed to the client for PushManager subscription
+- `VAPID_PRIVATE_KEY` and `VAPID_EMAIL` are server-only for signing push payloads
 
 ### Feature Requests (Backlog)
 - [x] Add images/photos for people - `PersonAvatar.tsx` + `PeopleEditor.tsx`
@@ -396,7 +451,10 @@ SELECT * FROM people;
 
 1. `api/assistant.ts` - Claude API integration, action definitions
 2. `src/components/AIAssistant.tsx` - Action execution logic
-3. `src/hooks/useSchedule.ts` - Supabase mutations for schedules
+3. `src/hooks/useSchedule.ts` - Supabase mutations for schedules + push notification triggers
+4. `api/push/_lib/web-push-edge.ts` - Custom Web Push encryption/signing (if push fails)
+5. `src/hooks/useRealtimeSchedule.ts` - Realtime subscription (if live updates stop working)
+6. `public/sw.js` - Service worker (if notifications don't appear)
 
 ---
 
