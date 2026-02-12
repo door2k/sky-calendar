@@ -103,6 +103,16 @@ export function useUpdateDaySchedule() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ date: variables.date, table: 'day_schedules' }),
       }).catch(() => {});
+      // Fire-and-forget push notification
+      fetch('/api/push/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Sky Calendar Updated',
+          body: `Schedule for ${variables.date} was changed`,
+          url: '/',
+        }),
+      }).catch(() => {});
     },
   });
 }
@@ -145,6 +155,16 @@ export function useUpdateSaturdaySchedule() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ date: variables.date, table: 'saturday_schedules' }),
+      }).catch(() => {});
+      // Fire-and-forget push notification
+      fetch('/api/push/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Sky Calendar Updated',
+          body: `Saturday schedule for ${variables.date} was changed`,
+          url: '/',
+        }),
       }).catch(() => {});
     },
   });
