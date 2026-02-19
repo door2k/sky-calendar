@@ -192,7 +192,7 @@ export function PrintCombined() {
 
   // Auto-print on load - wait for images to load first
   useEffect(() => {
-    if (!weekData || !monthData) return;
+    if (!weekData || !monthData || !people.length || !activities.length) return;
 
     const waitForImages = () => {
       const images = document.querySelectorAll('img');
@@ -215,7 +215,7 @@ export function PrintCombined() {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [weekData, monthData]);
+  }, [weekData, monthData, people, activities]);
 
   const weekEndDate = addDays(weekStart, 6);
   const WEEKDAYS = [t('sun'), t('mon'), t('tue'), t('wed'), t('thu'), t('fri'), t('sat')];

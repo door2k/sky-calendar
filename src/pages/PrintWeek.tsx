@@ -101,7 +101,7 @@ export function PrintWeek() {
 
   // Auto-print on load - wait for images to load first
   useEffect(() => {
-    if (!weekData) return;
+    if (!weekData || !people.length || !activities.length) return;
 
     const waitForImages = () => {
       const images = document.querySelectorAll('img');
@@ -124,7 +124,7 @@ export function PrintWeek() {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [weekData]);
+  }, [weekData, people, activities]);
 
   const weekEndDate = addDays(weekStart, 6);
 

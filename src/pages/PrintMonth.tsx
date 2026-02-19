@@ -148,13 +148,29 @@ export function PrintMonth() {
     return Array.from(activityMap.values());
   }, [monthData, activities]);
 
-  // Auto-print on load
+  // Auto-print on load - wait for all data and images
   useEffect(() => {
+    if (!monthData || !people.length || !activities.length) return;
+
+    const waitForImages = () => {
+      const images = document.querySelectorAll('img');
+      const imagePromises = Array.from(images).map((img) => {
+        if (img.complete) return Promise.resolve();
+        return new Promise((resolve) => {
+          img.onload = resolve;
+          img.onerror = resolve;
+        });
+      });
+      return Promise.all(imagePromises);
+    };
+
     const timer = setTimeout(() => {
-      window.print();
-    }, 500);
+      waitForImages().then(() => {
+        window.print();
+      });
+    }, 300);
     return () => clearTimeout(timer);
-  }, [monthData]);
+  }, [monthData, people, activities]);
 
   const WEEKDAYS = [t('sun'), t('mon'), t('tue'), t('wed'), t('thu'), t('fri'), t('sat')];
 
