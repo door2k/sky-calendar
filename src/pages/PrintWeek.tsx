@@ -66,6 +66,27 @@ export function PrintWeek() {
     );
   };
 
+  const renderAssociatedAvatars = (activity: Activity, large = false) => {
+    if (!activity.associated_person_ids?.length) return null;
+    const sizeClass = large ? 'w-8 h-8' : 'w-5 h-5';
+    return (
+      <span className={`inline-flex -space-x-1 ${large ? 'ml-2' : 'ml-1'} align-middle`}>
+        {activity.associated_person_ids.map((pid) => {
+          const person = getPerson(pid);
+          if (!person?.avatar_url) return null;
+          return (
+            <img
+              key={pid}
+              src={person.avatar_url}
+              alt=""
+              className={`${sizeClass} rounded-full object-cover border-2 border-white inline-block`}
+            />
+          );
+        })}
+      </span>
+    );
+  };
+
   // For print: picture centered, name below
   const renderPersonPrint = (id?: string, size: 'sm' | 'md' = 'sm') => {
     const person = getPerson(id);
@@ -268,6 +289,7 @@ export function PrintWeek() {
                   <div className="p-1.5 rounded-lg text-center font-medium text-xs"
                     style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
                     {activity.icon || '🎯'} {translateActivity(activity.name, activity.name_he)}
+                    {renderAssociatedAvatars(activity)}
                     {day?.after_gan_time && (
                       <div className="text-xs opacity-80">{day.after_gan_time}</div>
                     )}
@@ -277,6 +299,7 @@ export function PrintWeek() {
                   <div key={act.id} className="p-1.5 rounded-lg text-center font-medium text-xs"
                     style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
                     {act.icon || '🎯'} {translateActivity(act.name, act.name_he)}
+                    {renderAssociatedAvatars(act)}
                     {act.default_time && (
                       <div className="text-xs opacity-80">{act.default_time}</div>
                     )}
@@ -327,7 +350,10 @@ export function PrintWeek() {
                 return (
                   <div key={idx} className="bg-white/80 rounded-xl p-3 text-center shadow">
                     <span className="text-2xl">{activity?.icon || '🎯'}</span>
-                    <div className="font-bold text-purple-800">{translateActivity(act.custom_name || activity?.name || '')}</div>
+                    <div className="font-bold text-purple-800">
+                      {translateActivity(act.custom_name || activity?.name || '')}
+                      {activity && renderAssociatedAvatars(activity, true)}
+                    </div>
                     {act.time && <div className="text-sm text-purple-600">{act.time}</div>}
                   </div>
                 );
@@ -364,7 +390,10 @@ export function PrintWeek() {
                   className="p-3 rounded-xl bg-white shadow border-l-4"
                   style={{ borderColor: 'var(--color-primary)' }}
                 >
-                  <div className="font-bold text-lg">{translateActivity(activity.name, activity.name_he)}</div>
+                  <div className="font-bold text-lg">
+                    {translateActivity(activity.name, activity.name_he)}
+                    {renderAssociatedAvatars(activity, true)}
+                  </div>
                   <div className="text-sm text-gray-600 flex items-center gap-1">
                     <span>📅</span> {days.join(', ')} {time && `@ ${time}`}
                   </div>

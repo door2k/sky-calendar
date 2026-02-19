@@ -14,10 +14,11 @@ import {
 } from 'date-fns';
 import { isLastFridayOfMonth } from '../lib/dateUtils';
 import { useActivities } from '../hooks/useActivities';
+import { usePeople } from '../hooks/usePeople';
 import { useMonthSchedule } from '../hooks/useSchedule';
 import { useTheme } from '../hooks/useTheme';
 import { useI18n, useFormatDate } from '../lib/i18n';
-import type { Activity, SaturdayActivity } from '../types';
+import type { Activity, SaturdayActivity, Person } from '../types';
 import { lf } from '../lib/i18n-field';
 
 const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -51,8 +52,30 @@ export function PrintMonth() {
   const monthNum = currentMonth.getMonth() + 1;
 
   const { data: activities = [] } = useActivities();
+  const { data: people = [] } = usePeople();
   const { data: monthData } = useMonthSchedule(year, monthNum);
   const { t, lang, translateActivity, translateReason, translateDayName } = useI18n();
+
+  const renderActivityAvatars = (activity: Activity, large = false) => {
+    if (!activity.associated_person_ids?.length) return null;
+    const sizeClass = large ? 'w-6 h-6' : 'w-4 h-4';
+    return (
+      <span className={`inline-flex -space-x-1 ml-0.5 align-middle`}>
+        {activity.associated_person_ids.map((pid) => {
+          const person = people.find((p: Person) => p.id === pid);
+          if (!person?.avatar_url) return null;
+          return (
+            <img
+              key={pid}
+              src={person.avatar_url}
+              alt=""
+              className={`${sizeClass} rounded-full object-cover border border-white inline-block`}
+            />
+          );
+        })}
+      </span>
+    );
+  };
   const formatDate = useFormatDate();
 
   const themeEmoji = currentTheme?.emoji || '✨';
@@ -275,6 +298,7 @@ export function PrintMonth() {
                         style={{ backgroundColor: 'var(--color-primary)' }}
                       >
                         {assignedActivity.icon || '🎯'} {translateActivity(assignedActivity.name, assignedActivity.name_he)}
+                        {renderActivityAvatars(assignedActivity)}
                       </div>
                     )}
 
@@ -285,6 +309,7 @@ export function PrintMonth() {
                         className="text-xs px-1.5 py-0.5 rounded-full truncate bg-purple-200 text-purple-800 font-medium"
                       >
                         {activity.icon || '○'} {translateActivity(activity.name, activity.name_he)}
+                        {renderActivityAvatars(activity)}
                       </div>
                     ))}
 
@@ -298,6 +323,7 @@ export function PrintMonth() {
                             className="text-xs px-1.5 py-0.5 rounded-full truncate bg-purple-500 text-white font-medium"
                           >
                             {activity?.icon || '🎯'} {translateActivity(act.custom_name || activity?.name || '')}
+                            {activity && renderActivityAvatars(activity)}
                           </div>
                         );
                       })}
@@ -350,7 +376,10 @@ export function PrintMonth() {
                   className="p-3 rounded-xl bg-white shadow border-l-4"
                   style={{ borderColor: 'var(--color-primary)' }}
                 >
-                  <div className="font-bold">{translateActivity(activity.name, activity.name_he)}</div>
+                  <div className="font-bold">
+                    {translateActivity(activity.name, activity.name_he)}
+                    {renderActivityAvatars(activity, true)}
+                  </div>
                   {activity.is_recurring && activity.recurrence_day && (
                     <div className="text-sm text-purple-600 flex items-center gap-1">
                       <span>🔄</span>

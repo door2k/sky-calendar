@@ -103,6 +103,27 @@ export function PrintCombined() {
     return activities.find((a) => a.id === id);
   };
 
+  const renderAssociatedAvatars = (activity: Activity, large = false) => {
+    if (!activity.associated_person_ids?.length) return null;
+    const sizeClass = large ? 'w-6 h-6' : 'w-4 h-4';
+    return (
+      <span className={`inline-flex -space-x-1 ml-0.5 align-middle`}>
+        {activity.associated_person_ids.map((pid) => {
+          const person = getPerson(pid);
+          if (!person?.avatar_url) return null;
+          return (
+            <img
+              key={pid}
+              src={person.avatar_url}
+              alt=""
+              className={`${sizeClass} rounded-full object-cover border border-white inline-block`}
+            />
+          );
+        })}
+      </span>
+    );
+  };
+
   const getScheduleForDate = (date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
     return monthData?.daySchedules.find((s) => s.date === dateStr);
@@ -294,12 +315,14 @@ export function PrintCombined() {
                   <div className="p-1 rounded text-center text-white font-medium"
                     style={{ backgroundColor: 'var(--color-primary)', fontSize: '8px' }}>
                     {activity.icon || '🎯'} {translateActivity(activity.name, activity.name_he)}
+                    {renderAssociatedAvatars(activity)}
                   </div>
                 )}
                 {recurringActivities.map((act) => (
                   <div key={act.id} className="p-1 rounded text-center text-white font-medium"
                     style={{ backgroundColor: 'var(--color-primary)', fontSize: '8px' }}>
                     {act.icon || '🎯'} {translateActivity(act.name, act.name_he)}
+                    {renderAssociatedAvatars(act)}
                   </div>
                 ))}
 
@@ -332,7 +355,10 @@ export function PrintCombined() {
               const activity = getActivity(act.activity_id);
               return (
                 <div key={idx} className="bg-white/80 rounded-lg px-3 py-1.5 text-center shadow text-sm">
-                  <span className="font-bold text-purple-800">{translateActivity(act.custom_name || activity?.name || '')}</span>
+                  <span className="font-bold text-purple-800">
+                    {translateActivity(act.custom_name || activity?.name || '')}
+                    {activity && renderAssociatedAvatars(activity, true)}
+                  </span>
                   {act.time && <span className="text-purple-600 ml-1">@ {act.time}</span>}
                 </div>
               );
@@ -406,24 +432,32 @@ export function PrintCombined() {
                   <span className="absolute top-0.5 right-0.5 text-xs">🏠</span>
                 )}
 
-                {isCurrentMonth && schedule?.after_gan_activity_id && (
-                  <div
-                    className="mt-0.5 px-1 rounded text-white truncate"
-                    style={{ fontSize: '8px', backgroundColor: 'var(--color-primary)' }}
-                  >
-                    {translateActivity(getActivity(schedule.after_gan_activity_id)?.name || '')}
-                  </div>
-                )}
+                {isCurrentMonth && schedule?.after_gan_activity_id && (() => {
+                  const act = getActivity(schedule.after_gan_activity_id);
+                  return (
+                    <div
+                      className="mt-0.5 px-1 rounded text-white truncate"
+                      style={{ fontSize: '8px', backgroundColor: 'var(--color-primary)' }}
+                    >
+                      {translateActivity(act?.name || '')}
+                      {act && renderAssociatedAvatars(act)}
+                    </div>
+                  );
+                })()}
 
-                {isCurrentMonth && isSat && satSchedule?.activities?.slice(0, 1).map((act: SaturdayActivity, idx: number) => (
-                  <div
-                    key={idx}
-                    className="mt-0.5 px-1 rounded bg-purple-500 text-white truncate"
-                    style={{ fontSize: '8px' }}
-                  >
-                    {translateActivity(act.custom_name || getActivity(act.activity_id)?.name || '')}
-                  </div>
-                ))}
+                {isCurrentMonth && isSat && satSchedule?.activities?.slice(0, 1).map((act: SaturdayActivity, idx: number) => {
+                  const activity = getActivity(act.activity_id);
+                  return (
+                    <div
+                      key={idx}
+                      className="mt-0.5 px-1 rounded bg-purple-500 text-white truncate"
+                      style={{ fontSize: '8px' }}
+                    >
+                      {translateActivity(act.custom_name || activity?.name || '')}
+                      {activity && renderAssociatedAvatars(activity)}
+                    </div>
+                  );
+                })}
               </div>
             );
           })}
@@ -443,7 +477,10 @@ export function PrintCombined() {
                 className="p-2 rounded-lg bg-white shadow text-sm border-l-3"
                 style={{ borderLeftWidth: '3px', borderColor: 'var(--color-primary)' }}
               >
-                <div className="font-bold">{translateActivity(activity.name, activity.name_he)}</div>
+                <div className="font-bold">
+                  {translateActivity(activity.name, activity.name_he)}
+                  {renderAssociatedAvatars(activity, true)}
+                </div>
                 <div className="text-gray-600" style={{ fontSize: '10px' }}>
                   {days.join(', ')} {time && `@ ${time}`}
                 </div>
