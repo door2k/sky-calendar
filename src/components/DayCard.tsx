@@ -65,6 +65,26 @@ export function DayCard({
     return activities.find((a) => a.id === id);
   };
 
+  const renderAssociatedAvatars = (activity: Activity) => {
+    if (!activity.associated_person_ids?.length) return null;
+    return (
+      <span className="inline-flex -space-x-1 ml-1 align-middle">
+        {activity.associated_person_ids.map((pid) => {
+          const person = getPerson(pid);
+          if (!person?.avatar_url) return null;
+          return (
+            <img
+              key={pid}
+              src={person.avatar_url}
+              alt=""
+              className="w-5 h-5 rounded-full object-cover border border-white inline-block"
+            />
+          );
+        })}
+      </span>
+    );
+  };
+
   // Get recurring activities for this day of the week
   const getRecurringActivitiesForDay = (): Activity[] => {
     const dayOfWeek = getDay(date);
@@ -140,6 +160,7 @@ export function DayCard({
                   <span className={activity ? 'cursor-pointer hover:underline' : ''}>
                     {act.custom_name ? translateActivity(act.custom_name, scheduleToUse?.activities_he?.[idx]?.custom_name_he) : activity?.name ? translateActivity(activity.name, activity.name_he) : t('activity')}
                   </span>
+                  {activity && renderAssociatedAvatars(activity)}
                   {act.time && <span className="text-gray-600">— {act.time}</span>}
                 </div>
               );
@@ -249,6 +270,7 @@ export function DayCard({
                 }}
               >
                 {translateActivity(afterGanActivity.name, afterGanActivity.name_he)}
+                {renderAssociatedAvatars(afterGanActivity)}
                 {schedule?.after_gan_time && (
                   <span className="text-gray-500 ml-1">{schedule.after_gan_time}</span>
                 )}
@@ -274,6 +296,7 @@ export function DayCard({
                 <span className="text-purple-600">{activity.icon || '○'}</span>
                 <span className="cursor-pointer hover:underline text-purple-700">
                   {translateActivity(activity.name, activity.name_he)}
+                  {renderAssociatedAvatars(activity)}
                   {activity.default_time && (
                     <span className="text-purple-500 ml-1">{activity.default_time}</span>
                   )}

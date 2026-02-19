@@ -21,6 +21,7 @@ export interface Activity {
   default_time?: string; // e.g., "17:15"
   created_by?: string;
   icon?: string; // Emoji icon based on activity topic
+  associated_person_ids?: string[]; // People associated with this activity (e.g., whose birthday)
 }
 
 export interface DaySchedule {

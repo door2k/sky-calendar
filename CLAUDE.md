@@ -38,6 +38,15 @@ This project is managed via the Kladban board. Check for assigned tasks:
   - kladban stuck <id> "reason" — flag blocked
   - kladban inbox <id> — check messages from Tamir
 
+### Creating Tickets (for follow-up tasks)
+If you discover work that needs to be done, you can create tickets:
+- kladban create "title" --project <name> — one-time task
+- kladban create "title" --project <name> --recurrence daily — recurring daily
+- kladban create "title" --project <name> --recurrence weekly — recurring weekly
+- kladban create "title" --project <name> --recurrence monthly — recurring monthly
+- Add --description "details" for context
+Example: kladban create "Check backup status" --project smart-home --recurrence daily --description "Verify NAS backup completed"
+
 
 ## Global Rules
 

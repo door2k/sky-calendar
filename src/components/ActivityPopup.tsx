@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import type { Activity } from '../types';
 import { useUpdateActivity } from '../hooks/useActivities';
+import { usePeople } from '../hooks/usePeople';
 import { useI18n } from '../lib/i18n';
 import { lf } from '../lib/i18n-field';
+import { PersonAvatar } from './PersonAvatar';
+import { PersonPicker } from './PersonPicker';
 
 interface ActivityPopupProps {
   activity: Activity;
@@ -10,7 +13,8 @@ interface ActivityPopupProps {
 }
 
 export function ActivityPopup({ activity, onClose }: ActivityPopupProps) {
-  const { t, lang, translateActivity, translateDayName } = useI18n();
+  const { t, lang, translateActivity, translateDayName, translateName } = useI18n();
+  const { data: people = [] } = usePeople();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(activity.name);
   const [address, setAddress] = useState(activity.address || '');
@@ -18,6 +22,7 @@ export function ActivityPopup({ activity, onClose }: ActivityPopupProps) {
   const [contactPhone, setContactPhone] = useState(activity.contact_phone || '');
   const [note, setNote] = useState(activity.note || '');
   const [defaultTime, setDefaultTime] = useState(activity.default_time || '');
+  const [associatedPersonIds, setAssociatedPersonIds] = useState<string[]>(activity.associated_person_ids || []);
 
   const updateActivity = useUpdateActivity();
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -33,6 +38,7 @@ export function ActivityPopup({ activity, onClose }: ActivityPopupProps) {
         contact_phone: contactPhone || undefined,
         note: note || undefined,
         default_time: defaultTime || undefined,
+        associated_person_ids: associatedPersonIds,
       },
       {
         onSuccess: () => {
@@ -52,6 +58,7 @@ export function ActivityPopup({ activity, onClose }: ActivityPopupProps) {
     setContactPhone(activity.contact_phone || '');
     setNote(activity.note || '');
     setDefaultTime(activity.default_time || '');
+    setAssociatedPersonIds(activity.associated_person_ids || []);
     setIsEditing(false);
   };
 
@@ -176,6 +183,28 @@ export function ActivityPopup({ activity, onClose }: ActivityPopupProps) {
               <span className="text-gray-400 italic">{t('no_notes')}</span>
             )}
           </div>
+
+          {/* Associated People */}
+          {isEditing ? (
+            <PersonPicker
+              people={people}
+              selectedIds={associatedPersonIds}
+              onChange={setAssociatedPersonIds}
+            />
+          ) : associatedPersonIds.length > 0 && (
+            <div>
+              <div className="text-sm text-gray-500 mb-1">{t('associated_people')}</div>
+              <div className="flex flex-wrap gap-1.5">
+                {associatedPersonIds.map((pid) => {
+                  const person = people.find((p) => p.id === pid);
+                  if (!person) return null;
+                  return (
+                    <PersonAvatar key={pid} person={person} size="md" translateName={translateName} />
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Recurring info (read-only) */}
           {activity.is_recurring && activity.recurrence_day && (

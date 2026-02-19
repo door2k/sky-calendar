@@ -246,6 +246,12 @@ export function WeekView() {
                 </button>
               </div>
             </div>
+            <Link
+              to="/editor/people"
+              className="px-4 py-2 rounded-lg border hover:bg-gray-50"
+            >
+              {t('people')}
+            </Link>
             <div className="relative group">
               <button
                 onClick={handleSubscribeCalendar}

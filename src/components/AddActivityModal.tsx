@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Activity, Person } from '../types';
 import { useI18n } from '../lib/i18n';
+import { PersonPicker } from './PersonPicker';
 
 interface AddActivityModalProps {
   onSave: (activity: Omit<Activity, 'id'>) => Promise<void>;
@@ -22,6 +23,7 @@ export function AddActivityModal({ onSave, onClose, people = [] }: AddActivityMo
   const [recurrenceDay, setRecurrenceDay] = useState('');
   const [defaultTime, setDefaultTime] = useState('');
   const [createdBy, setCreatedBy] = useState('');
+  const [associatedPersonIds, setAssociatedPersonIds] = useState<string[]>([]);
 
   const DAYS_OF_WEEK = [
     { value: 'Sunday', label: t('sunday') },
@@ -51,6 +53,7 @@ export function AddActivityModal({ onSave, onClose, people = [] }: AddActivityMo
         recurrence_day: isRecurring && recurrenceDay ? recurrenceDay.toLowerCase() : undefined,
         default_time: isRecurring && defaultTime ? defaultTime : undefined,
         created_by: createdBy || undefined,
+        associated_person_ids: associatedPersonIds.length > 0 ? associatedPersonIds : undefined,
       });
       onClose();
     } catch (err) {
@@ -119,6 +122,14 @@ export function AddActivityModal({ onSave, onClose, people = [] }: AddActivityMo
               placeholder={t('any_notes_activity')}
             />
           </div>
+
+          {people.length > 0 && (
+            <PersonPicker
+              people={people}
+              selectedIds={associatedPersonIds}
+              onChange={setAssociatedPersonIds}
+            />
+          )}
 
           <div className="border-t pt-4">
             <label className="flex items-center gap-2">

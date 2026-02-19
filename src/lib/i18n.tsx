@@ -186,6 +186,11 @@ const translations = {
     'role_savta': 'Savta',
     'role_babysitter': 'Babysitter',
 
+    // People management
+    'people': 'People',
+    'back_to_calendar': '← Back to Calendar',
+    'associated_people': 'Associated People',
+
     // Language toggle
     'language': 'עב',
   },
@@ -370,6 +375,11 @@ const translations = {
     'role_savta_saba': 'סבתא וסבא',
     'role_savta': 'סבתא',
     'role_babysitter': 'בייביסיטר',
+
+    // People management
+    'people': 'אנשים',
+    'back_to_calendar': 'חזרה ליומן ←',
+    'associated_people': 'אנשים משויכים',
 
     // Language toggle
     'language': 'EN',

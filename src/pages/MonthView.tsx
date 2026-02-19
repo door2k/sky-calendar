@@ -25,7 +25,7 @@ import { usePeople } from '../hooks/usePeople';
 import { useActivities } from '../hooks/useActivities';
 import { useMonthSchedule } from '../hooks/useSchedule';
 import { useI18n, useFormatDate, LanguageToggle } from '../lib/i18n';
-import type { Activity, DaySchedule, SaturdaySchedule } from '../types';
+import type { Activity, DaySchedule, SaturdaySchedule, Person } from '../types';
 
 const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
@@ -105,6 +105,26 @@ export function MonthView() {
     const dayName = DAY_NAMES[dayOfWeek];
     return activities.filter(
       (a) => a.is_recurring && a.recurrence_day?.toLowerCase() === dayName
+    );
+  };
+
+  const renderActivityAvatars = (activity: Activity) => {
+    if (!activity.associated_person_ids?.length) return null;
+    return (
+      <span className="inline-flex -space-x-1 ml-0.5 align-middle">
+        {activity.associated_person_ids.map((pid) => {
+          const person = people.find((p: Person) => p.id === pid);
+          if (!person?.avatar_url) return null;
+          return (
+            <img
+              key={pid}
+              src={person.avatar_url}
+              alt=""
+              className="w-4 h-4 rounded-full object-cover border border-white inline-block"
+            />
+          );
+        })}
+      </span>
     );
   };
 
@@ -256,6 +276,7 @@ export function MonthView() {
                       >
                         <span className="text-blue-600 hover:underline cursor-pointer">
                           {getActivityById(schedule.after_gan_activity_id)?.icon || '🎯'} {translateActivity(getActivityById(schedule.after_gan_activity_id)?.name || ''  , getActivityById(schedule.after_gan_activity_id)?.name_he)}
+                          {getActivityById(schedule.after_gan_activity_id) && renderActivityAvatars(getActivityById(schedule.after_gan_activity_id)!)}
                         </span>
                       </div>
                     )}
@@ -274,6 +295,7 @@ export function MonthView() {
                         >
                           <span className="text-purple-600 hover:underline cursor-pointer">
                             {activity.icon || '○'} {translateActivity(activity.name)}
+                            {renderActivityAvatars(activity)}
                           </span>
                         </div>
                       ))}
@@ -292,6 +314,7 @@ export function MonthView() {
                         >
                           <span className="text-blue-600 hover:underline cursor-pointer">
                             {activity?.icon || '🎯'} {translateActivity(act.custom_name || activity?.name || ''  , satSchedule?.activities_he?.[idx]?.custom_name_he || activity?.name_he)}
+                            {activity && renderActivityAvatars(activity)}
                           </span>
                         </div>
                       );
@@ -351,6 +374,12 @@ export function MonthView() {
           >
             {t('print')}
           </button>
+          <Link
+            to="/editor/people"
+            className="px-4 py-2 rounded-lg border hover:bg-gray-50"
+          >
+            {t('people')}
+          </Link>
         </div>
       </div>
 
