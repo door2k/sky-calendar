@@ -65,10 +65,11 @@ export function DayCard({
     return activities.find((a) => a.id === id);
   };
 
-  const renderAssociatedAvatars = (activity: Activity) => {
+  const renderAssociatedAvatars = (activity: Activity, large = false) => {
     if (!activity.associated_person_ids?.length) return null;
+    const sizeClass = large ? 'w-10 h-10' : 'w-7 h-7';
     return (
-      <span className="inline-flex -space-x-1 ml-1 align-middle">
+      <span className={`inline-flex -space-x-1 ${large ? 'ml-2' : 'ml-1'} align-middle`}>
         {activity.associated_person_ids.map((pid) => {
           const person = getPerson(pid);
           if (!person?.avatar_url) return null;
@@ -77,7 +78,7 @@ export function DayCard({
               key={pid}
               src={person.avatar_url}
               alt=""
-              className="w-5 h-5 rounded-full object-cover border border-white inline-block"
+              className={`${sizeClass} rounded-full object-cover border-2 border-white inline-block`}
             />
           );
         })}
@@ -160,7 +161,7 @@ export function DayCard({
                   <span className={activity ? 'cursor-pointer hover:underline' : ''}>
                     {act.custom_name ? translateActivity(act.custom_name, scheduleToUse?.activities_he?.[idx]?.custom_name_he) : activity?.name ? translateActivity(activity.name, activity.name_he) : t('activity')}
                   </span>
-                  {activity && renderAssociatedAvatars(activity)}
+                  {activity && renderAssociatedAvatars(activity, true)}
                   {act.time && <span className="text-gray-600">— {act.time}</span>}
                 </div>
               );
