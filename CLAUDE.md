@@ -6,7 +6,8 @@ You are Claude, working on **sky-calendar** for Tamir. This is Sky's schedule ca
 
 ## Essential Context (survives compaction)
 
-- **Live**: https://sky-calendar.vercel.app
+- **TWO apps — maintain BOTH**: v1 = this repo (`~/projects/sky-calendar` → sky-calendar.vercel.app / sky.door2k.dev) and v2 = `github.com/door2k/sky-calendar-v2` → **sky.door2k.com (the family's daily app; not cloned by default)**. They share one Supabase DB; fixes usually land in both. See BRAIN.md "There are TWO apps".
+- **Live**: v1 → https://sky-calendar.vercel.app · v2 → https://sky.door2k.com
 - **Stack**: React 18 + TypeScript + Vite + Tailwind + Supabase + Vercel
 - **Database**: Supabase PostgreSQL (tables: people, activities, day_schedules, saturday_schedules, settings)
 - **AI Assistant**: Claude API via serverless edge function for natural language schedule updates

@@ -1,8 +1,27 @@
 # Sky's Schedule Calendar - Project Brain
 
-> **Last Updated:** 2026-02-12
+> **Last Updated:** 2026-06-17
 > **Status:** Active Development
-> **Live URL:** https://sky-calendar.vercel.app
+> **Live URLs:** v1 → https://sky-calendar.vercel.app · https://sky.door2k.dev  |  **v2 → https://sky.door2k.com (the family's daily app)**
+
+## ⚠️ There are TWO apps — maintain BOTH (v1 + v2)
+
+Tamir runs two Sky Calendar apps that **share the same Supabase DB** (`thzesmfiecccpvuzuscd`). When you fix a bug or add a feature, it usually needs to land in **both** (Tamir: "maintain both v1 and v2"). Be aware of v1 **and** v2 from the start of every session.
+
+| | v1 (this repo) | v2 |
+|---|---|---|
+| Repo | `github.com/door2k/sky-calendar` | `github.com/door2k/sky-calendar-v2` |
+| Local path | `~/projects/sky-calendar` | **not cloned by default — `git clone` it first** |
+| Domains | `sky-calendar.vercel.app`, `sky.door2k.dev` | `sky.door2k.com` (canonical daily app) |
+| Vercel project | `sky-calendar` / `prj_JnCwqhHgFqtZTt1VTAwe9rqZcc7X` | `sky-calendar-v2` / `prj_MyFndZKJdksNoCdPyt1KRxj2vMUu` |
+| Stack | React + Tailwind + React Query | React, inline styles, sticker-book redesign |
+| Code shape | classic components | adapter (`src/lib/adapters.ts`, DB→UI types) + `*Live.tsx` wrappers around presentational pages |
+
+Vercel team for both: `team_ZjB8fTO69klbnGqn0rMBy7ML`.
+
+**Same feature, differently-named files.** e.g. combined print = `PrintCombined.tsx` in both, but v2 feeds it via `PrintCombinedLive.tsx`; gan/after-gan render as inline-styled chips in v2 vs Tailwind classes in v1. So a fix is rarely a copy-paste — re-implement it in v2's idiom.
+
+**Deploy (both apps):** `git push origin main` → GitHub auto-deploys the matching Vercel project. The `npx vercel --prod` step (under "Deploying Changes" below) is **broken — expired CLI token**; don't use it. Confirm a deploy reached prod via the Vercel MCP `list_deployments` (look for `state: READY`).
 
 ## What Is This Project?
 
@@ -325,12 +344,15 @@ Full Web Push notification support for schedule change alerts, plus Supabase Rea
 
 ### Deploying Changes
 ```bash
-# Build and deploy
+# Build, then deploy by pushing to main — GitHub → Vercel auto-deploys
 npm run build
 git add -A && git commit -m "description"
-git push origin main
-npx vercel --prod --yes
+git push origin main          # ← this push triggers the production deploy
+# DO NOT use `npx vercel --prod` — the CLI token is expired and it fails.
+# Confirm the deploy via Vercel MCP list_deployments (top entry, state: READY).
 ```
+For **v2**, do the same from its own clone (`git clone github.com/door2k/sky-calendar-v2` first).
+**Verification caveat:** headless-Chrome screenshots can't load this app's Supabase data in the cloud sandbox (debug-port Chrome dies; one-shot `--screenshot` renders the shell with empty cells). Verify by code review + ask Tamir to confirm on the live site (hard-refresh to bypass the cached bundle / service worker).
 
 ### Testing AI Assistant
 - The AI assistant only works in production (Vercel edge functions)
@@ -459,3 +481,17 @@ SELECT * FROM people;
 ---
 
 *This BRAIN.md serves as the single source of truth for any Claude instance working on this project.*
+
+## Notion hub
+
+Tamir shares a Notion workspace with all his Claude instances:
+https://www.notion.so/34837f0083cb81ffa9d4f41dc700950b
+
+Relevant for this project:
+- **Projects DB** (`collection://837f8915-0724-46dc-b24b-166097e2e778`) — find this project's row, update Status / Current Focus / Blockers as they change, and append substantive progress to the page body.
+- **Research & Sourcing** (`collection://dccd3610-587e-4bc6-a324-a235c6085aa4`) — open a row when Tamir asks you to find or compare options.
+- **Appointments** (`collection://207abc29-64ab-40bd-8911-ed3870101707`), **Contacts** (`collection://53adee4e-6642-4da5-83d0-1c3695eb548c`), **Follow-ups** (`collection://e5e59629-8ba0-4443-ba8e-65ae00f50290`) — see hub page for schemas.
+
+Notion MCP tools: `notion-fetch`, `notion-search`, `notion-create-pages`, `notion-update-page`.
+
+API quirks: checkbox values = `"__YES__"` / `"__NO__"`; multi-select = JSON-string array like `"[\"work\",\"friend\"]"`; date fields expand into `date:<Name>:start`, `date:<Name>:end`, `date:<Name>:is_datetime` (1 = datetime, 0 = date-only).
