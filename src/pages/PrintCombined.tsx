@@ -432,6 +432,16 @@ export function PrintCombined() {
                   <span className="absolute top-0.5 right-0.5 text-xs">🏠</span>
                 )}
 
+                {/* Gan activity (e.g. Show & Tell) — weekday gan days only */}
+                {isCurrentMonth && !isSat && !isNoGan && schedule?.gan_activity && (
+                  <div
+                    className="mt-0.5 px-1 rounded bg-green-100 text-green-700 truncate font-medium"
+                    style={{ fontSize: '8px' }}
+                  >
+                    🏫 {translateActivity(schedule.gan_activity, schedule.gan_activity_he)}
+                  </div>
+                )}
+
                 {isCurrentMonth && schedule?.after_gan_activity_id && (() => {
                   const act = getActivity(schedule.after_gan_activity_id);
                   return (

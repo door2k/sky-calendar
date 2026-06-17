@@ -307,6 +307,13 @@ export function PrintMonth() {
                 {/* Activities */}
                 {isCurrentMonth && (
                   <div className="mt-1 space-y-0.5">
+                    {/* Gan activity (e.g. Show & Tell) — weekday gan days only */}
+                    {!isSat && !isNoGan && schedule?.gan_activity && (
+                      <div className="text-xs px-1.5 py-0.5 rounded-full truncate bg-green-100 text-green-700 font-medium">
+                        🏫 {translateActivity(schedule.gan_activity, schedule.gan_activity_he)}
+                      </div>
+                    )}
+
                     {/* Assigned activity */}
                     {assignedActivity && (
                       <div
