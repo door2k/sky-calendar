@@ -79,6 +79,7 @@ The user expects Claude to be proactive about connecting to these services rathe
 3. **day_schedules** - Weekday schedules (Sun-Fri ONLY)
    - id, date, dropoff_person_id, pickup_person_id, bedtime_person_id, after_gan_activity_id, after_gan_time, gan_activity, gan_activity_he, is_no_gan, no_gan_reason, no_gan_reason_he, notes, notes_he, created_at, updated_at
    - **Friday-specific:** family_dinner_person_id, family_dinner_time (default "16:00")
+   - `last_friday_gan_open` (boolean, default false) — **v2 only** (added 2026-06-20). When true on a last-Friday-of-month date, v2 treats that Friday as a regular gan day instead of the no-gan/Saturday-style default. v1 ignores this column.
 
 4. **saturday_schedules** - Saturday schedules AND last Friday of month (DIFFERENT structure - no Gan)
    - id, date, **activities** (JSONB array of `{activity_id, time}`), **activities_he** (JSONB), notes, notes_he, created_at, updated_at
